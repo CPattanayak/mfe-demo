@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shell
+  namespace: mfe-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: shell }
+  template:
+    metadata:
+      labels: { app: shell }
+    spec:
+      containers:
+        - name: shell
+          image: ghcr.io/your-org/shell:latest
+          # Built with PRODUCTS_REMOTE_URL / ORDERS_REMOTE_URL pointing at
+          # the MinIO-published remoteEntry.js files (or at the
+          # mfe-products / mfe-orders Services below if you prefer serving
+          # them from cluster-internal nginx instead of MinIO).
+          ports: [{ containerPort: 3000 }]
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { cpu: 250m, memory: 128Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shell
+  namespace: mfe-demo
+spec:
+  selector: { app: shell }
+  ports: [{ port: 3000, targetPort: 3000 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mfe-products
+  namespace: mfe-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: mfe-products }
+  template:
+    metadata:
+      labels: { app: mfe-products }
+    spec:
+      containers:
+        - name: mfe-products
+          image: ghcr.io/your-org/mfe-products:latest
+          ports: [{ containerPort: 3001 }]
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { cpu: 250m, memory: 128Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mfe-products
+  namespace: mfe-demo
+spec:
+  selector: { app: mfe-products }
+  ports: [{ port: 3001, targetPort: 3001 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mfe-orders
+  namespace: mfe-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: mfe-orders }
+  template:
+    metadata:
+      labels: { app: mfe-orders }
+    spec:
+      containers:
+        - name: mfe-orders
+          image: ghcr.io/your-org/mfe-orders:latest
+          ports: [{ containerPort: 3002 }]
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { cpu: 250m, memory: 128Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mfe-orders
+  namespace: mfe-demo
+spec:
+  selector: { app: mfe-orders }
+  ports: [{ port: 3002, targetPort: 3002 }]

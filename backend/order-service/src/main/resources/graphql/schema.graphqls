@@ -1,0 +1,67 @@
+type Order {
+    id: ID!
+    customerId: String!
+    status: String!
+    items: [OrderItem!]!
+    createdAt: String!
+    updatedAt: String!
+}
+
+type OrderItem {
+    id: ID!
+    productId: ID!
+    quantity: Int!
+    unitPriceCents: Int!
+    "Resolved via a batched DataLoader call to product-service — see ProductDataLoader"
+    product: Product
+}
+
+"Shadow type mirroring product-service's Product, populated across the network"
+type Product {
+    id: ID!
+    sku: String!
+    name: String!
+    priceCents: Int!
+    currency: String!
+}
+
+input CreateOrderItemInput {
+    productId: ID!
+    quantity: Int!
+}
+
+input CreateOrderInput {
+    customerId: String!
+    items: [CreateOrderItemInput!]!
+}
+
+enum OrderSortField {
+    CREATED_AT
+    UPDATED_AT
+    STATUS
+    CUSTOMER_ID
+}
+
+enum SortDirection {
+    ASC
+    DESC
+}
+
+type Query {
+    "Requires order:read"
+    orders(
+        page: Int = 0
+        size: Int = 20
+        sortField: OrderSortField = CREATED_AT
+        sortDirection: SortDirection = DESC
+    ): [Order!]!
+    "Requires order:read"
+    order(id: ID!): Order
+}
+
+type Mutation {
+    "Requires order:write"
+    createOrder(input: CreateOrderInput!): Order!
+    "Requires order:write"
+    updateOrderStatus(id: ID!, status: String!): Order!
+}

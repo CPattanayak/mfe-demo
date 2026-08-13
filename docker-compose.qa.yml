@@ -1,0 +1,129 @@
+version: "3.8"
+
+# QA topology. Differences from the local docker-compose.yml:
+#  - No MinIO: static assets are served by a CDN-style nginx edge (./cdn)
+#    with real immutable-asset caching, gzip, and content-hashed filenames
+#    — much closer to what CloudFront/Cloud CDN/Cloudflare would front in
+#    a hosted environment than a raw MinIO bucket is.
+#  - shell/mfe-products/mfe-orders are no longer three separate dev
+#    containers; they're built once into the single `cdn` image, the way
+#    they'd actually be published by CI for a shared QA environment.
+#  - Backend services get healthchecks and restart policies, since QA is
+#    meant to be a shared, longer-lived environment, not a throwaway dev box.
+#
+# Usage:
+#   docker compose -f docker-compose.qa.yml up -d --build
+#
+# For a real cloud CDN in front of this same origin, point
+# CloudFront/Cloud CDN/Cloudflare at the `cdn` service's public endpoint
+# (or, better, at an S3/GCS bucket populated by your CI build — see
+# scripts/publish-to-minio.sh for the analogous local pattern) instead of
+# hitting nginx's own cache directly from the internet.
+#
+# NOTE on APP_ENV: the `cdn` build below sets APP_ENV=qa, which bakes in
+# frontend/shared-auth/src/config.js's "qa" block (placeholder
+# https://qa-*.example.com URLs) into the bundle — the same thing a real CI
+# pipeline would do for an actual QA deploy. If you're just smoke-testing
+# this compose file's container topology on your own machine, either edit
+# that "qa" block to point at localhost first, or override
+# `args.APP_ENV: local` below to use the local URLs instead.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: appdb-qa
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${QA_POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - pgdata-qa:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    container_name: keycloak-qa
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: ${QA_KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_HEALTH_ENABLED: "true"
+    volumes:
+      - ./infra/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+#  product-service:
+#    build:
+#      context: .
+#      dockerfile: backend/product-service/Dockerfile
+#    container_name: product-service-qa
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
+#    environment:
+#      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/appdb?schema=product_schema
+#      SPRING_R2DBC_USERNAME: product_service
+#      SPRING_R2DBC_PASSWORD: product_service_pwd
+#      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/microfrontend-demo
+#      SERVER_PORT: 8081
+#    ports:
+#      - "8081:8081"
+#    restart: unless-stopped
+#
+#  order-service:
+#    build:
+#      context: .
+#      dockerfile: backend/order-service/Dockerfile
+#    container_name: order-service-qa
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
+#      product-service:
+#        condition: service_started
+#    environment:
+#      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/appdb?schema=order_schema
+#      SPRING_R2DBC_USERNAME: order_service
+#      SPRING_R2DBC_PASSWORD: order_service_pwd
+#      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/microfrontend-demo
+#      PRODUCT_SERVICE_GRAPHQL_URL: http://product-service:8081/graphql
+#      SERVER_PORT: 8082
+#    ports:
+#      - "8082:8082"
+#    restart: unless-stopped
+
+  # Requirement: CDN-style deployment for QA (replaces MinIO from the local
+  # docker-compose.yml). Serves shell at /, mfe-products at /products/,
+  # mfe-orders at /orders/, all from one origin with CDN cache semantics.
+  cdn:
+    build:
+      context: .
+      dockerfile: cdn/Dockerfile
+      args:
+        CDN_PUBLIC_PATH: /
+        PRODUCTS_REMOTE_URL: /products/remoteEntry.js
+        ORDERS_REMOTE_URL: /orders/remoteEntry.js
+        APP_ENV: qa
+    container_name: cdn-qa
+    environment:
+      KEYCLOAK_URL: http://localhost:8080
+    ports:
+      - "8090:8090"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8090/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata-qa:

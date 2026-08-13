@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: order-service
+  r2dbc:
+    url: ${SPRING_R2DBC_URL:r2dbc:postgresql://localhost:5432/appdb?schema=order_schema}
+    username: ${SPRING_R2DBC_USERNAME:order_service}
+    password: ${SPRING_R2DBC_PASSWORD:order_service_pwd}
+  graphql:
+    graphiql:
+      enabled: true
+    cors:
+      # See product-service's application.yml for why allowed-origin-patterns
+      # rather than allowed-origins is used here.
+      allowed-origin-patterns: "*"
+      allowed-methods: "*"
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI:http://localhost:8080/realms/microfrontend-demo}
+
+product-service:
+  graphql-url: ${PRODUCT_SERVICE_GRAPHQL_URL:http://localhost:8081/graphql}
+
+server:
+  port: ${SERVER_PORT:8082}
+
+logging:
+  level:
+    org.springframework.graphql: INFO

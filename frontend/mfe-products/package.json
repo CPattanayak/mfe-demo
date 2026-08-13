@@ -1,0 +1,27 @@
+{
+  "name": "mfe-products",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "webpack serve --mode development --port 3001",
+    "build": "webpack --mode production"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.24.0",
+    "@apollo/client": "^3.10.0",
+    "graphql": "^16.9.0",
+    "@demo/shared-auth": "file:../shared-auth"
+  },
+  "devDependencies": {
+    "webpack": "^5.92.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^5.0.4",
+    "html-webpack-plugin": "^5.6.0",
+    "babel-loader": "^9.1.3",
+    "@babel/core": "^7.24.7",
+    "@babel/preset-env": "^7.24.7",
+    "@babel/preset-react": "^7.24.7"
+  }
+}

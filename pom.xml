@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!--
+    This is a reactor/aggregator POM. Importing THIS file in your IDE
+    (IntelliJ: "Open" -> select this pom.xml; Eclipse/VS Code: "Import
+    Maven Project") pulls in every backend microservice as a linked module,
+    so you get cross-module navigation, one shared dependency version set,
+    and a single "mvn install" / "mvn verify" from the root.
+
+    The frontend (frontend/*) is a separate npm workspace-style tree and is
+    NOT part of this Maven reactor — see frontend/README or open those
+    folders directly in a JS-aware IDE / VS Code.
+  -->
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.3.2</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>com.demo</groupId>
+  <artifactId>mfe-demo-parent</artifactId>
+  <version>1.0.0</version>
+  <packaging>pom</packaging>
+  <name>mfe-demo-parent</name>
+  <description>Aggregator POM for the Module Federation + Keycloak + GraphQL sample platform's Spring backend services</description>
+
+  <properties>
+    <!--
+      17 (not 21) deliberately: nothing in this codebase uses Java 21-only
+      features (checked — only pattern-matching instanceof and records,
+      both from Java 16+), and 17 is Spring Boot 3.3.2's actual minimum.
+      Using the lower LTS version that still covers everything used here
+      means anyone with a reasonably current JDK already installed can
+      build this without installing a new one. Bump both properties
+      together if you specifically want 21+ features later.
+    -->
+    <java.version>17</java.version>
+    <maven.compiler.release>17</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <modules>
+    <module>backend/product-service</module>
+    <module>backend/order-service</module>
+  </modules>
+
+  <!--
+    Dependency versions shared across services that aren't already pinned
+    by spring-boot-starter-parent's BOM. Child modules just declare the
+    dependency without a <version> and it resolves from here.
+  -->
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <version>1.18.34</version>
+      </dependency>
+      <!--
+        r2dbc-postgresql was RELOCATED from groupId io.r2dbc to groupId
+        org.postgresql as of version 1.0.0.RELEASE (io.r2dbc:r2dbc-postgresql
+        tops out at 0.8.13.RELEASE and was never published as 1.0.x — that's
+        why "io.r2dbc:r2dbc-postgresql:1.0.5.RELEASE" doesn't exist under
+        that groupId). spring-boot-starter-parent's BOM also doesn't pin
+        this artifact, hence the explicit version here.
+      -->
+      <dependency>
+        <groupId>org.postgresql</groupId>
+        <artifactId>r2dbc-postgresql</artifactId>
+        <version>1.0.5.RELEASE</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-maven-plugin</artifactId>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <configuration>
+            <release>${java.version}</release>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+</project>

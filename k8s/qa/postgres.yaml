@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  namespace: mfe-demo-qa
+data:
+  init.sql: |
+    # Copy the full contents of infra/postgres/init.sql here, or generate
+    # this ConfigMap from that file directly:
+    #   kubectl create configmap postgres-init \
+    #     --from-file=init.sql=infra/postgres/init.sql \
+    #     -n mfe-demo-qa --dry-run=client -o yaml | kubectl apply -f -
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: mfe-demo-qa
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels: { app: postgres }
+  template:
+    metadata:
+      labels: { app: postgres }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports: [{ containerPort: 5432 }]
+          envFrom:
+            - secretRef: { name: postgres-credentials }
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init-script
+              mountPath: /docker-entrypoint-initdb.d
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "postgres"] }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+      volumes:
+        - name: init-script
+          configMap: { name: postgres-init }
+  volumeClaimTemplates:
+    - metadata: { name: data }
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources: { requests: { storage: 5Gi } } # smaller than prod; QA data is disposable
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: mfe-demo-qa
+spec:
+  selector: { app: postgres }
+  ports: [{ port: 5432, targetPort: 5432 }]
+  clusterIP: None

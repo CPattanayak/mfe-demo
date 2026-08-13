@@ -1,0 +1,142 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: appdb
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    container_name: keycloak
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./infra/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio-bootstrap:
+    image: minio/mc:latest
+    container_name: minio-bootstrap
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 minioadmin minioadmin &&
+      mc mb -p local/mfe-assets &&
+      mc anonymous set download local/mfe-assets &&
+      echo 'MinIO bucket mfe-assets ready'
+      "
+
+  product-service:
+    build:
+      context: .
+      dockerfile: backend/product-service/Dockerfile
+    container_name: product-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    environment:
+      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/appdb?schema=product_schema
+      SPRING_R2DBC_USERNAME: product_service
+      SPRING_R2DBC_PASSWORD: product_service_pwd
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/microfrontend-demo
+      SERVER_PORT: 8081
+    ports:
+      - "8081:8081"
+
+  order-service:
+    build:
+      context: .
+      dockerfile: backend/order-service/Dockerfile
+    container_name: order-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+      product-service:
+        condition: service_started
+    environment:
+      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/appdb?schema=order_schema
+      SPRING_R2DBC_USERNAME: order_service
+      SPRING_R2DBC_PASSWORD: order_service_pwd
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/microfrontend-demo
+      PRODUCT_SERVICE_GRAPHQL_URL: http://product-service:8081/graphql
+      SERVER_PORT: 8082
+    ports:
+      - "8082:8082"
+
+  shell:
+    build:
+      context: ./frontend
+      dockerfile: shell/Dockerfile
+    container_name: mfe-shell
+    ports:
+      - "3000:3000"
+    environment:
+      KEYCLOAK_URL: http://localhost:8080
+      PRODUCTS_REMOTE_URL: http://localhost:3001/remoteEntry.js
+      ORDERS_REMOTE_URL: http://localhost:3002/remoteEntry.js
+
+  mfe-products:
+    build:
+      context: ./frontend
+      dockerfile: mfe-products/Dockerfile
+    container_name: mfe-products
+    ports:
+      - "3001:3001"
+    environment:
+      PRODUCT_GRAPHQL_URL: http://localhost:8081/graphql
+
+  mfe-orders:
+    build:
+      context: ./frontend
+      dockerfile: mfe-orders/Dockerfile
+    container_name: mfe-orders
+    ports:
+      - "3002:3002"
+    environment:
+      ORDER_GRAPHQL_URL: http://localhost:8082/graphql
+
+volumes:
+  pgdata:
+  miniodata:

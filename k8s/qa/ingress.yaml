@@ -1,0 +1,45 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mfe-demo-qa-ingress
+  namespace: mfe-demo-qa
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+    # If a cloud CDN sits in front of this Ingress (recommended for a
+    # public-facing QA env), it will typically honor the Cache-Control
+    # headers already set by cdn/nginx.conf. Nothing extra is required
+    # here beyond making sure the CDN is configured to respect
+    # origin cache headers rather than overriding them.
+spec:
+  tls:
+    - hosts:
+        - qa.example.com
+        - qa-api.example.com
+        - qa-auth.example.com
+      secretName: mfe-demo-qa-tls
+  rules:
+    - host: qa.example.com
+      http:
+        paths:
+          # Single CDN origin now serves shell (/), mfe-products
+          # (/products/) and mfe-orders (/orders/) — no more separate
+          # shell/mfe-products/mfe-orders Services or a MinIO path.
+          - path: /
+            pathType: Prefix
+            backend: { service: { name: cdn, port: { number: 8090 } } }
+    - host: qa-auth.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: { service: { name: keycloak, port: { number: 8080 } } }
+    - host: qa-api.example.com
+      http:
+        paths:
+          - path: /product
+            pathType: Prefix
+            backend: { service: { name: product-service, port: { number: 8081 } } }
+          - path: /order
+            pathType: Prefix
+            backend: { service: { name: order-service, port: { number: 8082 } } }

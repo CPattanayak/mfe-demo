@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  namespace: mfe-demo-qa
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: keycloak }
+  template:
+    metadata:
+      labels: { app: keycloak }
+    spec:
+      containers:
+        - name: keycloak
+          image: quay.io/keycloak/keycloak:25.0
+          # --import-realm kept ON for QA (unlike prod) so the realm always
+          # matches infra/keycloak/realm-export.json for test consistency.
+          args: ["start-dev", "--import-realm", "--hostname-strict=false"]
+          envFrom:
+            - secretRef: { name: keycloak-admin }
+          env:
+            - { name: KC_DB, value: postgres }
+            - { name: KC_DB_URL, value: "jdbc:postgresql://postgres:5432/appdb" }
+            - { name: KC_DB_USERNAME, valueFrom: { secretKeyRef: { name: postgres-credentials, key: POSTGRES_USER } } }
+            - { name: KC_DB_PASSWORD, valueFrom: { secretKeyRef: { name: postgres-credentials, key: POSTGRES_PASSWORD } } }
+          ports: [{ containerPort: 8080 }]
+          readinessProbe:
+            httpGet: { path: /health/ready, port: 8080 }
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          volumeMounts:
+            - name: realm-import
+              mountPath: /opt/keycloak/data/import
+      volumes:
+        - name: realm-import
+          configMap: { name: keycloak-realm }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-realm
+  namespace: mfe-demo-qa
+data:
+  # Generate with:
+  #   kubectl create configmap keycloak-realm \
+  #     --from-file=realm-export.json=infra/keycloak/realm-export.json \
+  #     -n mfe-demo-qa --dry-run=client -o yaml | kubectl apply -f -
+  realm-export.json: "{}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+  namespace: mfe-demo-qa
+spec:
+  selector: { app: keycloak }
+  ports: [{ port: 8080, targetPort: 8080 }]

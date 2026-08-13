@@ -1,0 +1,42 @@
+type Product {
+    id: ID!
+    sku: String!
+    name: String!
+    description: String
+    priceCents: Int!
+    currency: String!
+    createdBy: String!
+    createdAt: String!
+    updatedAt: String!
+}
+
+input CreateProductInput {
+    sku: String!
+    name: String!
+    description: String
+    priceCents: Int!
+    currency: String = "USD"
+}
+
+input UpdateProductInput {
+    name: String
+    description: String
+    priceCents: Int
+}
+
+type Query {
+    "Public read — requires product:read role"
+    products(page: Int = 0, size: Int = 20): [Product!]!
+    product(id: ID!): Product
+    "Batch lookup used internally by order-service's DataLoader to avoid N+1"
+    productsByIds(ids: [ID!]!): [Product!]!
+}
+
+type Mutation {
+    "Requires product:write role"
+    createProduct(input: CreateProductInput!): Product!
+    "Requires product:write role"
+    updateProduct(id: ID!, input: UpdateProductInput!): Product!
+    "Requires admin role"
+    deleteProduct(id: ID!): Boolean!
+}

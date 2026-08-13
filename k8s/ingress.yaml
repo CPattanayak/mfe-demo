@@ -1,0 +1,50 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mfe-demo-ingress
+  namespace: mfe-demo
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  tls:
+    - hosts:
+        - app.example.com
+        - api.example.com
+        - auth.example.com
+        - assets.example.com
+      secretName: mfe-demo-tls
+  rules:
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: { service: { name: shell, port: { number: 3000 } } }
+          - path: /products
+            pathType: Prefix
+            backend: { service: { name: mfe-products, port: { number: 3001 } } }
+          - path: /orders
+            pathType: Prefix
+            backend: { service: { name: mfe-orders, port: { number: 3002 } } }
+    - host: auth.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: { service: { name: keycloak, port: { number: 8080 } } }
+    - host: api.example.com
+      http:
+        paths:
+          - path: /product
+            pathType: Prefix
+            backend: { service: { name: product-service, port: { number: 8081 } } }
+          - path: /order
+            pathType: Prefix
+            backend: { service: { name: order-service, port: { number: 8082 } } }
+    - host: assets.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: { service: { name: minio, port: { number: 9000 } } }

@@ -1,0 +1,88 @@
+{
+  "realm": "microfrontend-demo",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "roles": {
+    "realm": [
+      { "name": "product:read", "description": "Read products" },
+      { "name": "product:write", "description": "Create/update products" },
+      { "name": "order:read", "description": "Read orders" },
+      { "name": "order:write", "description": "Create/update orders" },
+      { "name": "admin", "description": "Full access" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "web-app",
+      "name": "Micro-frontend Shell",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:3000/*##http://localhost:9000/shell/*##http://localhost:8090/*"
+      },
+      "redirectUris": [
+        "http://localhost:3000/*",
+        "http://localhost:9000/shell/*",
+        "http://localhost:8090/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "http://localhost:9000",
+        "http://localhost:8090",
+        "+"
+      ],
+      "fullScopeAllowed": true
+    },
+    {
+      "clientId": "product-service",
+      "name": "product-service (resource server)",
+      "enabled": true,
+      "publicClient": false,
+      "bearerOnly": true,
+      "protocol": "openid-connect",
+      "secret": "product-service-secret"
+    },
+    {
+      "clientId": "order-service",
+      "name": "order-service (resource server)",
+      "enabled": true,
+      "publicClient": false,
+      "bearerOnly": true,
+      "protocol": "openid-connect",
+      "secret": "order-service-secret"
+    }
+  ],
+  "users": [
+    {
+      "username": "demo.user",
+      "enabled": true,
+      "email": "demo.user@example.com",
+      "emailVerified": true,
+      "credentials": [
+        { "type": "password", "value": "Passw0rd!", "temporary": false }
+      ],
+      "realmRoles": ["product:read", "product:write", "order:read", "order:write"]
+    },
+    {
+      "username": "readonly.user",
+      "enabled": true,
+      "email": "readonly.user@example.com",
+      "emailVerified": true,
+      "credentials": [
+        { "type": "password", "value": "Passw0rd!", "temporary": false }
+      ],
+      "realmRoles": ["product:read", "order:read"]
+    }
+  ]
+}

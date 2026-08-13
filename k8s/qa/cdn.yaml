@@ -1,0 +1,46 @@
+# Requirement: QA-appropriate replacement for MinIO. Serves the built
+# shell / mfe-products / mfe-orders bundles from one nginx "CDN edge"
+# origin (image built from ./cdn/Dockerfile), with real immutable-asset
+# cache headers instead of a raw object-store bucket.
+#
+# For an actual hosted QA environment, you'd typically point a real CDN
+# (CloudFront / Cloud CDN / Cloudflare) at this Service (or at this
+# Deployment's Ingress below) rather than exposing nginx's own cache
+# straight to the internet — see the annotations note in ingress.yaml.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cdn
+  namespace: mfe-demo-qa
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: cdn }
+  template:
+    metadata:
+      labels: { app: cdn }
+    spec:
+      containers:
+        - name: cdn
+          image: ghcr.io/your-org/mfe-cdn:qa
+          # Built via: docker build -f cdn/Dockerfile
+          #              --build-arg CDN_PUBLIC_PATH=https://qa-assets.example.com/
+          #              --build-arg PRODUCTS_REMOTE_URL=https://qa-assets.example.com/products/remoteEntry.js
+          #              --build-arg ORDERS_REMOTE_URL=https://qa-assets.example.com/orders/remoteEntry.js .
+          ports: [{ containerPort: 8090 }]
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8090 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { cpu: 250m, memory: 128Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cdn
+  namespace: mfe-demo-qa
+spec:
+  selector: { app: cdn }
+  ports: [{ port: 8090, targetPort: 8090 }]

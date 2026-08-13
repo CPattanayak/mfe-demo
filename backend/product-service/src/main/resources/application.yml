@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: product-service
+  r2dbc:
+    url: ${SPRING_R2DBC_URL:r2dbc:postgresql://localhost:5432/appdb?schema=product_schema}
+    username: ${SPRING_R2DBC_USERNAME:product_service}
+    password: ${SPRING_R2DBC_PASSWORD:product_service_pwd}
+  graphql:
+    graphiql:
+      enabled: true
+    cors:
+      # allowed-origin-patterns (not allowed-origins) deliberately: a
+      # literal "*" for allowed-origins becomes an invalid CORS config the
+      # moment allow-credentials is true (browsers reject a wildcard
+      # Access-Control-Allow-Origin on a credentialed request per the CORS
+      # spec) — allowed-origin-patterns stays valid either way, so this
+      # doesn't silently break if credentials get turned on later.
+      allowed-origin-patterns: "*"
+      allowed-methods: "*"
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI:http://localhost:8080/realms/microfrontend-demo}
+
+server:
+  port: ${SERVER_PORT:8081}
+
+logging:
+  level:
+    org.springframework.graphql: INFO
+    org.springframework.security: INFO

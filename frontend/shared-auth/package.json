@@ -1,0 +1,14 @@
+{
+  "name": "@demo/shared-auth",
+  "version": "1.0.0",
+  "description": "Keycloak session + token refresh + Apollo Client, shared as a Module Federation singleton across shell/mfe-products/mfe-orders",
+  "main": "src/index.js",
+  "dependencies": {
+    "keycloak-js": "^25.0.0",
+    "@apollo/client": "^3.10.0",
+    "graphql": "^16.9.0",
+    "graphql-ws": "^5.16.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}

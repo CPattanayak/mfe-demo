@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  namespace: mfe-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: product-service }
+  template:
+    metadata:
+      labels: { app: product-service }
+    spec:
+      containers:
+        - name: product-service
+          image: ghcr.io/your-org/product-service:latest
+          ports: [{ containerPort: 8081 }]
+          env:
+            - { name: SPRING_R2DBC_URL, value: "r2dbc:postgresql://postgres:5432/appdb?schema=product_schema" }
+            - { name: SPRING_R2DBC_USERNAME, value: "product_service" }
+            - name: SPRING_R2DBC_PASSWORD
+              valueFrom: { secretKeyRef: { name: postgres-credentials, key: PRODUCT_SERVICE_DB_PASSWORD } }
+            - { name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI, value: "http://keycloak:8080/realms/microfrontend-demo" }
+            - { name: SERVER_PORT, value: "8081" }
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8081 }
+            initialDelaySeconds: 15
+          resources:
+            requests: { cpu: 200m, memory: 384Mi }
+            limits: { cpu: "1", memory: 768Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: product-service
+  namespace: mfe-demo
+spec:
+  selector: { app: product-service }
+  ports: [{ port: 8081, targetPort: 8081 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: mfe-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: order-service }
+  template:
+    metadata:
+      labels: { app: order-service }
+    spec:
+      containers:
+        - name: order-service
+          image: ghcr.io/your-org/order-service:latest
+          ports: [{ containerPort: 8082 }]
+          env:
+            - { name: SPRING_R2DBC_URL, value: "r2dbc:postgresql://postgres:5432/appdb?schema=order_schema" }
+            - { name: SPRING_R2DBC_USERNAME, value: "order_service" }
+            - name: SPRING_R2DBC_PASSWORD
+              valueFrom: { secretKeyRef: { name: postgres-credentials, key: ORDER_SERVICE_DB_PASSWORD } }
+            - { name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI, value: "http://keycloak:8080/realms/microfrontend-demo" }
+            - { name: PRODUCT_SERVICE_GRAPHQL_URL, value: "http://product-service:8081/graphql" }
+            - { name: SERVER_PORT, value: "8082" }
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8082 }
+            initialDelaySeconds: 15
+          resources:
+            requests: { cpu: 200m, memory: 384Mi }
+            limits: { cpu: "1", memory: 768Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: mfe-demo
+spec:
+  selector: { app: order-service }
+  ports: [{ port: 8082, targetPort: 8082 }]
