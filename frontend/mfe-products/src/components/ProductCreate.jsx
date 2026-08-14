@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { useMutation } from "@apollo/client";
+import { authClient } from "@demo/shared-auth";
 import { CREATE_PRODUCT, PRODUCTS_QUERY } from "../graphql/productQueries";
 import ProductForm from "./ProductForm";
 import Box from "@mui/material/Box";
@@ -14,6 +15,25 @@ export default function ProductCreate() {
     refetchQueries: [{ query: PRODUCTS_QUERY, variables: { page: 0, size: 20 } }],
     onCompleted: () => navigate("/products"),
   });
+
+  // The nav menu already hides "Create" for users without product:write
+  // (see Header.jsx/NavGroup.jsx), but that doesn't stop someone from
+  // typing /products/new directly into the URL bar. The backend's
+  // @PreAuthorize would reject the mutation either way, but showing a
+  // form that's guaranteed to fail on submit is a bad experience — this
+  // is the same permission check, just applied at the page level too.
+  if (!authClient.hasRole("product:write")) {
+    return (
+      <Box sx={{ maxWidth: { xs: "100%", sm: 480, md: 640 } }}>
+        <Link component={RouterLink} to="/products" underline="hover">
+          &larr; Back to products
+        </Link>
+        <Alert severity="warning" sx={{ mt: 2 }}>
+          You need the <code>product:write</code> role to create products.
+        </Alert>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ maxWidth: { xs: "100%", sm: 480, md: 640 } }}>

@@ -4,10 +4,12 @@ import { useQuery } from "@apollo/client";
 import { authClient } from "@demo/shared-auth";
 import { ORDERS_QUERY } from "../graphql/orderQueries";
 import Pagination from "./Pagination";
+import OrderItemDetailsDialog from "./OrderItemDetailsDialog";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
+import Link from "@mui/material/Link";
 import IconButton from "@mui/material/IconButton";
 import Table from "@mui/material/Table";
 import TableHead from "@mui/material/TableHead";
@@ -42,6 +44,8 @@ export default function OrderList() {
   const [page, setPage] = useState(0);
   const [sortField, setSortField] = useState(DEFAULT_SORT_FIELD);
   const [sortDirection, setSortDirection] = useState(DEFAULT_SORT_DIRECTION);
+  // Requirement: clicking an item opens a modal with its details.
+  const [selectedItem, setSelectedItem] = useState(null);
 
   const handleSort = (field) => {
     if (field === sortField) {
@@ -122,9 +126,16 @@ export default function OrderList() {
                 </TableCell>
                 <TableCell>
                   {order.items.map((item) => (
-                    <Typography key={item.id} variant="body2">
+                    <Link
+                      key={item.id}
+                      component="button"
+                      variant="body2"
+                      underline="hover"
+                      onClick={() => setSelectedItem(item)}
+                      sx={{ display: "block", textAlign: "left" }}
+                    >
                       {item.quantity} × {item.product?.name ?? "(unknown product)"}
-                    </Typography>
+                    </Link>
                   ))}
                 </TableCell>
                 <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
@@ -153,6 +164,12 @@ export default function OrderList() {
       )}
 
       <Pagination page={page} pageSize={PAGE_SIZE} itemCount={data.orders.length} onPageChange={setPage} />
+
+      <OrderItemDetailsDialog
+        item={selectedItem}
+        open={Boolean(selectedItem)}
+        onClose={() => setSelectedItem(null)}
+      />
     </Box>
   );
 }

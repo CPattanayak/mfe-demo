@@ -20,6 +20,13 @@ public interface ProductRepository extends ReactiveCrudRepository<Product, UUID>
 
     Flux<Product> findAllBy(Pageable pageable);
 
-    @Query("SELECT * FROM products WHERE id = ANY(:ids)")
+    // NOT "= ANY(:ids)": that expects the Collection<UUID> parameter to be
+    // coerced into a genuine Postgres array bind value, which is
+    // driver/version-dependent and was silently matching nothing here
+    // (no error — the query ran fine, it just never matched any row).
+    // "IN (:ids)" is Spring Data R2DBC's officially documented Collection
+    // parameter binding: it reliably expands to one placeholder per
+    // element regardless of driver array-type support.
+    @Query("SELECT * FROM products WHERE id IN (:ids)")
     Flux<Product> findAllByIdIn(Collection<UUID> ids);
 }

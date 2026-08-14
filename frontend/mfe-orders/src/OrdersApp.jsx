@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { Routes, Route } from "react-router-dom";
 import { ApolloProvider } from "@apollo/client";
 import { createApolloClient, config } from "@demo/shared-auth";
+import { ProductLookupClientContext } from "./productLookupClientContext";
 import OrderList from "./components/OrderList";
 import OrderCreate from "./components/OrderCreate";
 import OrderEdit from "./components/OrderEdit";
@@ -26,13 +27,25 @@ export default function OrdersApp() {
   // event-bus (e.g. Redis Pub/Sub, Kafka) replaces NOTIFY/LISTEN.
   const client = useMemo(() => createApolloClient(config.orderGraphqlUrl), []);
 
+  // Second client, scoped to product-service, ONLY for OrderItemsEditor's
+  // product-id/name autocomplete (see OrderCreate.jsx). order-service's
+  // schema has no products query of its own — that data genuinely lives
+  // in a different service — so a second ApolloProvider is the correct
+  // shape here rather than routing product lookups through order-service.
+  const productLookupClient = useMemo(
+    () => createApolloClient(config.productGraphqlUrl),
+    []
+  );
+
   return (
     <ApolloProvider client={client}>
-      <Routes>
-        <Route index element={<OrderList />} />
-        <Route path="new" element={<OrderCreate />} />
-        <Route path=":id/edit" element={<OrderEdit />} />
-      </Routes>
+      <ProductLookupClientContext.Provider value={productLookupClient}>
+        <Routes>
+          <Route index element={<OrderList />} />
+          <Route path="new" element={<OrderCreate />} />
+          <Route path=":id/edit" element={<OrderEdit />} />
+        </Routes>
+      </ProductLookupClientContext.Provider>
     </ApolloProvider>
   );
 }

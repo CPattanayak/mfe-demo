@@ -10,8 +10,12 @@ export const ORDERS_QUERY = gql`
       updatedAt
       items {
         id
+        productId
         quantity
+        unitPriceCents
         product {
+          id
+          sku
           name
           priceCents
           currency
@@ -31,7 +35,10 @@ export const ORDER_QUERY = gql`
         id
         quantity
         productId
+        unitPriceCents
         product {
+          id
+          sku
           name
           priceCents
           currency

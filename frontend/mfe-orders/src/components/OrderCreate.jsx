@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { useMutation } from "@apollo/client";
+import { authClient } from "@demo/shared-auth";
 import { CREATE_ORDER, ORDERS_QUERY } from "../graphql/orderQueries";
 import OrderItemsEditor from "./OrderItemsEditor";
 import Box from "@mui/material/Box";
@@ -34,6 +35,23 @@ export default function OrderCreate() {
       },
     });
   };
+
+  // Same fix as mfe-products' ProductCreate.jsx: the nav menu already
+  // hides "Create" for a user without order:write, but that doesn't stop
+  // direct navigation to /orders/new. Guard the page itself too, rather
+  // than showing a form that's guaranteed to fail on submit.
+  if (!authClient.hasRole("order:write")) {
+    return (
+      <Box sx={{ maxWidth: { xs: "100%", sm: 480, md: 640 } }}>
+        <Link component={RouterLink} to="/orders" underline="hover">
+          &larr; Back to orders
+        </Link>
+        <Alert severity="warning" sx={{ mt: 2 }}>
+          You need the <code>order:write</code> role to create orders.
+        </Alert>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ maxWidth: { xs: "100%", sm: 480, md: 640 } }}>

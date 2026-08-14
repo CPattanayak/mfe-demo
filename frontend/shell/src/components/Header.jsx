@@ -15,15 +15,20 @@ import NavGroup from "./NavGroup";
 
 const NAV_ITEMS = [
   { label: "Products — List", path: "/products" },
-  { label: "Products — Create", path: "/products/new" },
+  { label: "Products — Create", path: "/products/new", requiresRole: "product:write" },
   { label: "Orders — List", path: "/orders" },
-  { label: "Orders — Create", path: "/orders/new" },
+  { label: "Orders — Create", path: "/orders/new", requiresRole: "order:write" },
 ];
 
 export default function Header() {
   const navigate = useNavigate();
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [mobileMenuAnchor, setMobileMenuAnchor] = useState(null);
+  // Same fix as NavGroup.jsx: don't dangle a "Create" entry the user's
+  // role can't actually complete (was showing for readonly.user before).
+  const visibleNavItems = NAV_ITEMS.filter(
+    (item) => !item.requiresRole || authClient.hasRole(item.requiresRole)
+  );
 
   return (
     <AppBar position="static" color="default" elevation={1}>
@@ -38,7 +43,7 @@ export default function Header() {
             open={Boolean(mobileMenuAnchor)}
             onClose={() => setMobileMenuAnchor(null)}
           >
-            {NAV_ITEMS.map((item) => (
+            {visibleNavItems.map((item) => (
               <MenuItem
                 key={item.path}
                 onClick={() => {
@@ -62,8 +67,8 @@ export default function Header() {
 
         {/* Desktop/tablet: inline nav with submenus */}
         <Box sx={{ display: { xs: "none", md: "flex" }, gap: 1, flexGrow: 1 }}>
-          <NavGroup label="Products" basePath="/products" />
-          <NavGroup label="Orders" basePath="/orders" />
+          <NavGroup label="Products" basePath="/products" createRole="product:write" />
+          <NavGroup label="Orders" basePath="/orders" createRole="order:write" />
         </Box>
         <Box sx={{ display: { xs: "block", md: "none" }, flexGrow: 1 }} />
 

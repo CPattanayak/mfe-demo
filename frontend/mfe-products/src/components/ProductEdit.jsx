@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate, useParams, Link as RouterLink } from "react-router-dom";
 import { useMutation, useQuery } from "@apollo/client";
+import { authClient } from "@demo/shared-auth";
 import { PRODUCT_QUERY, UPDATE_PRODUCT, PRODUCTS_QUERY } from "../graphql/productQueries";
 import ProductForm from "./ProductForm";
 import Box from "@mui/material/Box";
@@ -25,6 +26,23 @@ export default function ProductEdit() {
   if (loadingProduct) return <CircularProgress />;
   if (loadError) return <Alert severity="error">{loadError.message}</Alert>;
   if (!data?.product) return <Typography>Product not found.</Typography>;
+
+  // Same fix as ProductCreate.jsx: don't show an edit form that's
+  // guaranteed to fail on submit for a user without product:write. The
+  // list view already hides the Edit icon, but direct URL navigation to
+  // /products/:id/edit bypasses that.
+  if (!authClient.hasRole("product:write")) {
+    return (
+      <Box sx={{ maxWidth: { xs: "100%", sm: 480, md: 640 } }}>
+        <Link component={RouterLink} to="/products" underline="hover">
+          &larr; Back to products
+        </Link>
+        <Alert severity="warning" sx={{ mt: 2 }}>
+          You need the <code>product:write</code> role to edit products.
+        </Alert>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ maxWidth: { xs: "100%", sm: 480, md: 640 } }}>
