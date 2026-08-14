@@ -6,17 +6,13 @@
   <component name="ChangeListManager">
     <list default="true" id="72ecbfc3-5308-49d8-9298-724ce416c9e3" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/product-service/src/main/java/com/demo/product/repository/ProductRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/product-service/src/main/java/com/demo/product/repository/ProductRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/OrdersApp.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/OrdersApp.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderCreate.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderCreate.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderEdit.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderEdit.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderItemsEditor.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderItemsEditor.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderList.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderList.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/graphql/orderQueries.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/graphql/orderQueries.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-products/src/components/ProductCreate.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-products/src/components/ProductCreate.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/mfe-products/src/components/ProductEdit.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-products/src/components/ProductEdit.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/mfe-products/src/components/ProductList.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-products/src/components/ProductList.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/shell/src/App.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/shell/src/App.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/shell/src/components/Header.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/shell/src/components/Header.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/shell/src/components/NavGroup.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/shell/src/components/NavGroup.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/shell/src/theme.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/shell/src/theme.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -61,7 +57,7 @@
     "project.structure.side.proportion": "0.2"
   }
 }]]></component>
-  <component name="RunManager" selected="Spring Boot.ProductServiceApplication">
+  <component name="RunManager" selected="Spring Boot.OrderServiceApplication">
     <configuration name="OrderServiceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
       <option name="ALTERNATIVE_JRE_PATH" value="$PROJECT_DIR$/../../../Program Files/Java/jdk-17" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
@@ -94,8 +90,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Spring Boot.ProductServiceApplication" />
         <item itemvalue="Spring Boot.OrderServiceApplication" />
+        <item itemvalue="Spring Boot.ProductServiceApplication" />
       </list>
     </recent_temporary>
   </component>

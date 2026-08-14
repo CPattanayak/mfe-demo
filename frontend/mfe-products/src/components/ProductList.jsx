@@ -4,6 +4,7 @@ import { useQuery } from "@apollo/client";
 import { authClient } from "@demo/shared-auth";
 import { PRODUCTS_QUERY } from "../graphql/productQueries";
 import Pagination from "./Pagination";
+import TableSkeleton from "./TableSkeleton";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -16,13 +17,13 @@ import TableRow from "@mui/material/TableRow";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import Paper from "@mui/material/Paper";
-import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import AddIcon from "@mui/icons-material/Add";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import EditIcon from "@mui/icons-material/Edit";
 
 const PAGE_SIZE = 20;
+const COLUMN_COUNT = 4; // SKU, Name, Price, actions
 
 export default function ProductList() {
   const [page, setPage] = useState(0);
@@ -35,8 +36,8 @@ export default function ProductList() {
 
   const canWrite = authClient.hasRole("product:write");
   const isRefreshing = networkStatus === 4;
+  const isInitialLoad = loading && !data;
 
-  if (loading && !data) return <CircularProgress />;
   if (error) return <Alert severity="error">{error.message}</Alert>;
 
   return (
@@ -53,7 +54,7 @@ export default function ProductList() {
       >
         <Typography variant="h5">Products</Typography>
         <Stack direction="row" spacing={1} justifyContent={{ xs: "flex-end", sm: "flex-start" }}>
-          <IconButton onClick={() => refetch()} disabled={isRefreshing}>
+          <IconButton onClick={() => refetch()} disabled={isRefreshing || isInitialLoad}>
             <RefreshIcon />
           </IconButton>
           {canWrite && (
@@ -65,7 +66,9 @@ export default function ProductList() {
       </Stack>
 
       {/* TableContainer scrolls horizontally on its own if content is
-          still too wide after hiding columns below — never clips. */}
+          still too wide after hiding columns below — never clips. The
+          header row renders immediately even during the initial load, so
+          only the body shows a skeleton rather than the whole page. */}
       <TableContainer component={Paper}>
         <Table size="small">
           <TableHead>
@@ -76,30 +79,36 @@ export default function ProductList() {
               <TableCell align="right" />
             </TableRow>
           </TableHead>
-          <TableBody>
-            {data.products.map((p) => (
-              <TableRow key={p.id} hover>
-                <TableCell>{p.sku}</TableCell>
-                <TableCell>{p.name}</TableCell>
-                <TableCell>
-                  {(p.priceCents / 100).toFixed(2)} {p.currency}
-                </TableCell>
-                <TableCell align="right">
-                  {canWrite && (
-                    <IconButton component={RouterLink} to={`${p.id}/edit`} size="small">
-                      <EditIcon fontSize="small" />
-                    </IconButton>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
+          {isInitialLoad ? (
+            <TableSkeleton columns={COLUMN_COUNT} />
+          ) : (
+            <TableBody>
+              {data.products.map((p) => (
+                <TableRow key={p.id} hover>
+                  <TableCell>{p.sku}</TableCell>
+                  <TableCell>{p.name}</TableCell>
+                  <TableCell>
+                    {(p.priceCents / 100).toFixed(2)} {p.currency}
+                  </TableCell>
+                  <TableCell align="right">
+                    {canWrite && (
+                      <IconButton component={RouterLink} to={`${p.id}/edit`} size="small">
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          )}
         </Table>
       </TableContainer>
 
-      <Pagination page={page} pageSize={PAGE_SIZE} itemCount={data.products.length} onPageChange={setPage} />
+      {!isInitialLoad && (
+        <Pagination page={page} pageSize={PAGE_SIZE} itemCount={data.products.length} onPageChange={setPage} />
+      )}
 
-      {!canWrite && (
+      {!isInitialLoad && !canWrite && (
         <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
           You need the <code>product:write</code> role to create or edit products.
         </Typography>

@@ -5,6 +5,7 @@ import { authClient } from "@demo/shared-auth";
 import { ORDERS_QUERY } from "../graphql/orderQueries";
 import Pagination from "./Pagination";
 import OrderItemDetailsDialog from "./OrderItemDetailsDialog";
+import TableSkeleton from "./TableSkeleton";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -20,7 +21,6 @@ import TableContainer from "@mui/material/TableContainer";
 import TableSortLabel from "@mui/material/TableSortLabel";
 import Paper from "@mui/material/Paper";
 import Chip from "@mui/material/Chip";
-import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import AddIcon from "@mui/icons-material/Add";
 import RefreshIcon from "@mui/icons-material/Refresh";
@@ -28,6 +28,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 const PAGE_SIZE = 20;
 const DEFAULT_SORT_FIELD = "CREATED_AT";
 const DEFAULT_SORT_DIRECTION = "DESC";
+const COLUMN_COUNT = 6; // Customer, Status, Items, Created, Updated, actions
 
 // `hideOnMobile: true` columns are dropped below the `sm` breakpoint
 // (600px) — the table still fits a phone without horizontal scrolling
@@ -66,8 +67,8 @@ export default function OrderList() {
 
   const canWrite = authClient.hasRole("order:write");
   const isRefreshing = networkStatus === 4;
+  const isInitialLoad = loading && !data;
 
-  if (loading && !data) return <CircularProgress />;
   if (error) return <Alert severity="error">{error.message}</Alert>;
 
   return (
@@ -81,7 +82,7 @@ export default function OrderList() {
       >
         <Typography variant="h5">Orders</Typography>
         <Stack direction="row" spacing={1} justifyContent={{ xs: "flex-end", sm: "flex-start" }}>
-          <IconButton onClick={() => refetch()} disabled={isRefreshing}>
+          <IconButton onClick={() => refetch()} disabled={isRefreshing || isInitialLoad}>
             <RefreshIcon />
           </IconButton>
           {canWrite && (
@@ -117,53 +118,59 @@ export default function OrderList() {
               <TableCell align="right" />
             </TableRow>
           </TableHead>
-          <TableBody>
-            {data.orders.map((order) => (
-              <TableRow key={order.id} hover>
-                <TableCell>{order.customerId}</TableCell>
-                <TableCell>
-                  <Chip label={order.status} size="small" color="primary" variant="outlined" />
-                </TableCell>
-                <TableCell>
-                  {order.items.map((item) => (
-                    <Link
-                      key={item.id}
-                      component="button"
-                      variant="body2"
-                      underline="hover"
-                      onClick={() => setSelectedItem(item)}
-                      sx={{ display: "block", textAlign: "left" }}
-                    >
-                      {item.quantity} × {item.product?.name ?? "(unknown product)"}
-                    </Link>
-                  ))}
-                </TableCell>
-                <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
-                  {formatDate(order.createdAt)}
-                </TableCell>
-                <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
-                  {formatDate(order.updatedAt)}
-                </TableCell>
-                <TableCell align="right">
-                  {canWrite && (
-                    <Button component={RouterLink} to={`${order.id}/edit`} size="small">
-                      Update
-                    </Button>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
+          {isInitialLoad ? (
+            <TableSkeleton columns={COLUMN_COUNT} />
+          ) : (
+            <TableBody>
+              {data.orders.map((order) => (
+                <TableRow key={order.id} hover>
+                  <TableCell>{order.customerId}</TableCell>
+                  <TableCell>
+                    <Chip label={order.status} size="small" color="primary" variant="outlined" />
+                  </TableCell>
+                  <TableCell>
+                    {order.items.map((item) => (
+                      <Link
+                        key={item.id}
+                        component="button"
+                        variant="body2"
+                        underline="hover"
+                        onClick={() => setSelectedItem(item)}
+                        sx={{ display: "block", textAlign: "left" }}
+                      >
+                        {item.quantity} × {item.product?.name ?? "(unknown product)"}
+                      </Link>
+                    ))}
+                  </TableCell>
+                  <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
+                    {formatDate(order.createdAt)}
+                  </TableCell>
+                  <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
+                    {formatDate(order.updatedAt)}
+                  </TableCell>
+                  <TableCell align="right">
+                    {canWrite && (
+                      <Button component={RouterLink} to={`${order.id}/edit`} size="small">
+                        Update
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          )}
         </Table>
       </TableContainer>
 
-      {data.orders.length === 0 && (
+      {!isInitialLoad && data.orders.length === 0 && (
         <Typography color="text.secondary" sx={{ mt: 2 }}>
           No orders on this page.
         </Typography>
       )}
 
-      <Pagination page={page} pageSize={PAGE_SIZE} itemCount={data.orders.length} onPageChange={setPage} />
+      {!isInitialLoad && (
+        <Pagination page={page} pageSize={PAGE_SIZE} itemCount={data.orders.length} onPageChange={setPage} />
+      )}
 
       <OrderItemDetailsDialog
         item={selectedItem}

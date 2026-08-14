@@ -4,11 +4,11 @@ import { useMutation, useQuery } from "@apollo/client";
 import { authClient } from "@demo/shared-auth";
 import { ORDER_QUERY, ORDERS_QUERY, UPDATE_ORDER_STATUS } from "../graphql/orderQueries";
 import OrderItemDetailsDialog from "./OrderItemDetailsDialog";
+import FormSkeleton from "./FormSkeleton";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Link from "@mui/material/Link";
 import Alert from "@mui/material/Alert";
-import CircularProgress from "@mui/material/CircularProgress";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
@@ -47,7 +47,7 @@ export default function OrderEdit() {
     if (data?.order?.status) setStatus(data.order.status);
   }, [data]);
 
-  if (loadingOrder) return <CircularProgress />;
+  if (loadingOrder) return <FormSkeleton />;
   if (loadError) return <Alert severity="error">{loadError.message}</Alert>;
   if (!data?.order) return <Typography>Order not found.</Typography>;
 
