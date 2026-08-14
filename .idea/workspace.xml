@@ -6,13 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="72ecbfc3-5308-49d8-9298-724ce416c9e3" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderEdit.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderEdit.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderList.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderList.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-products/src/components/ProductEdit.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-products/src/components/ProductEdit.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-products/src/components/ProductList.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-products/src/components/ProductList.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/shell/src/App.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/shell/src/App.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/shell/src/components/Header.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/shell/src/components/Header.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/shell/src/theme.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/shell/src/theme.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/graphql/orderQueries.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/graphql/orderQueries.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -45,7 +39,7 @@
     "Spring Boot.OrderServiceApplication.executor": "Run",
     "Spring Boot.ProductServiceApplication.executor": "Run",
     "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "skill",
     "kotlin-language-version-configured": "true",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",

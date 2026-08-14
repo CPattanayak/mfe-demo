@@ -1,5 +1,26 @@
 import { gql } from "@apollo/client";
 
+// A fragment: a named, reusable field selection. ORDERS_QUERY and
+// ORDER_QUERY both need the exact same OrderItem shape (id, product
+// details, etc.) — before this, that selection was copy-pasted in both
+// places, so adding/removing a field meant remembering to update it
+// twice. Define it once here, spread it with `...OrderItemFields` below.
+const ORDER_ITEM_FRAGMENT = gql`
+  fragment OrderItemFields on OrderItem {
+    id
+    productId
+    quantity
+    unitPriceCents
+    product {
+      id
+      sku
+      name
+      priceCents
+      currency
+    }
+  }
+`;
+
 export const ORDERS_QUERY = gql`
   query Orders($page: Int, $size: Int, $sortField: OrderSortField, $sortDirection: SortDirection) {
     orders(page: $page, size: $size, sortField: $sortField, sortDirection: $sortDirection) {
@@ -9,20 +30,11 @@ export const ORDERS_QUERY = gql`
       createdAt
       updatedAt
       items {
-        id
-        productId
-        quantity
-        unitPriceCents
-        product {
-          id
-          sku
-          name
-          priceCents
-          currency
-        }
+        ...OrderItemFields
       }
     }
   }
+  ${ORDER_ITEM_FRAGMENT}
 `;
 
 export const ORDER_QUERY = gql`
@@ -32,20 +44,11 @@ export const ORDER_QUERY = gql`
       customerId
       status
       items {
-        id
-        quantity
-        productId
-        unitPriceCents
-        product {
-          id
-          sku
-          name
-          priceCents
-          currency
-        }
+        ...OrderItemFields
       }
     }
   }
+  ${ORDER_ITEM_FRAGMENT}
 `;
 
 export const CREATE_ORDER = gql`
