@@ -1,47 +1,25 @@
 import React from "react";
+import Box from "@mui/material/Box";
+import MuiPagination from "@mui/material/Pagination";
 
 /**
- * Previous/Next pagination controls.
- *
- * hasNextPage is a HEURISTIC, not real data: `orders(page, size)` returns
- * a plain list, not a total count. "Is there a next page?" is inferred
- * from whether this page came back FULL (itemCount === pageSize). Wrong
- * in exactly one case: total count is an exact multiple of pageSize, so
- * "Next" stays enabled and returns an empty page. Fine for a demo; a real
- * system would have the backend return `{ items, totalCount }` instead of
- * a bare list so this could be computed exactly.
+ * hasNextPage is a heuristic (page came back full), since the backend
+ * query returns a plain list, not a total count.
  */
 export default function Pagination({ page, pageSize, itemCount, onPageChange }) {
-  const hasPreviousPage = page > 0;
   const hasNextPage = itemCount === pageSize;
+  const count = page + 1 + (hasNextPage ? 1 : 0);
 
-  if (!hasPreviousPage && !hasNextPage) return null;
+  if (page === 0 && !hasNextPage) return null;
 
   return (
-    <div style={styles.row}>
-      <button
-        disabled={!hasPreviousPage}
-        onClick={() => onPageChange(page - 1)}
-        style={styles.btn}
-      >
-        ← Previous
-      </button>
-      <span style={styles.pageLabel}>Page {page + 1}</span>
-      <button disabled={!hasNextPage} onClick={() => onPageChange(page + 1)} style={styles.btn}>
-        Next →
-      </button>
-    </div>
+    <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+      <MuiPagination
+        page={page + 1}
+        count={count}
+        onChange={(_, value) => onPageChange(value - 1)}
+        color="primary"
+      />
+    </Box>
   );
 }
-
-const styles = {
-  row: { display: "flex", alignItems: "center", gap: 12, marginTop: 12 },
-  pageLabel: { fontSize: 13, color: "#666" },
-  btn: {
-    padding: "6px 12px",
-    border: "1px solid #ccc",
-    borderRadius: 4,
-    background: "#fff",
-    cursor: "pointer",
-  },
-};

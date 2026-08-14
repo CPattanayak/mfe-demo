@@ -67,6 +67,9 @@ module.exports = {
         react: { singleton: true, requiredVersion: deps.react },
         "react-dom": { singleton: true, requiredVersion: deps["react-dom"] },
         "react-router-dom": { singleton: true, requiredVersion: deps["react-router-dom"] },
+        "@mui/material": { singleton: true, requiredVersion: deps["@mui/material"] },
+        "@emotion/react": { singleton: true, requiredVersion: deps["@emotion/react"] },
+        "@emotion/styled": { singleton: true, requiredVersion: deps["@emotion/styled"] },
         // Requirement #4: ONE shared auth/token/Apollo instance across every
         // remote — loaded once, reused everywhere.
         "@demo/shared-auth": { singleton: true, requiredVersion: false },

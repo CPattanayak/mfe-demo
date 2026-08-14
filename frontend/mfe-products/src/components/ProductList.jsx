@@ -1,116 +1,109 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
 import { useQuery } from "@apollo/client";
 import { authClient } from "@demo/shared-auth";
 import { PRODUCTS_QUERY } from "../graphql/productQueries";
 import Pagination from "./Pagination";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Table from "@mui/material/Table";
+import TableHead from "@mui/material/TableHead";
+import TableBody from "@mui/material/TableBody";
+import TableRow from "@mui/material/TableRow";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import Paper from "@mui/material/Paper";
+import CircularProgress from "@mui/material/CircularProgress";
+import Alert from "@mui/material/Alert";
+import AddIcon from "@mui/icons-material/Add";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import EditIcon from "@mui/icons-material/Edit";
 
 const PAGE_SIZE = 20;
 
 export default function ProductList() {
-  // This is the fix for "pagination doesn't work": `page` is now real
-  // component state, changed by Pagination's Previous/Next buttons — not
-  // a hardcoded { page: 0 } that never moved. Every page change re-runs
-  // this query with new variables, which product-service's `products(page,
-  // size)` resolver turns into PageRequest.of(page, size) against the
-  // R2DBC repository.
   const [page, setPage] = useState(0);
 
-  // Fix for "background changes don't reflect": products don't have a
-  // GraphQL Subscription in this demo (see README's "Real-time updates"
-  // section for why subscriptions were tried and then removed), so this
-  // uses the pragmatic fallback instead — poll every 15s, plus a manual
-  // "⟳ Refresh" button below for an immediate resync instead of waiting
-  // out the poll interval.
   const { data, loading, error, refetch, networkStatus } = useQuery(PRODUCTS_QUERY, {
     variables: { page, size: PAGE_SIZE },
     pollInterval: 15_000,
-    notifyOnNetworkStatusChange: true, // so `networkStatus` updates during refetch()/poll, driving the spinner below
+    notifyOnNetworkStatusChange: true,
   });
 
   const canWrite = authClient.hasRole("product:write");
-  const isRefreshing = networkStatus === 4; // Apollo's NetworkStatus.refetch
+  const isRefreshing = networkStatus === 4;
 
-  if (loading && !data) return <p>Loading products…</p>;
-  if (error) {
-    // Requirement #9: a clean permission-denied message instead of a crash
-    // when the logged-in user lacks product:read.
-    return <p style={{ color: "crimson" }}>Error: {error.message}</p>;
-  }
+  if (loading && !data) return <CircularProgress />;
+  if (error) return <Alert severity="error">{error.message}</Alert>;
 
   return (
-    <div>
-      <div style={styles.headerRow}>
-        <h2>Products</h2>
-        <div style={styles.headerActions}>
-          <button onClick={() => refetch()} disabled={isRefreshing} style={styles.refreshBtn}>
-            {isRefreshing ? "Refreshing…" : "⟳ Refresh"}
-          </button>
+    <Box>
+      {/* Stack switches from column (mobile) to row (tablet+) so the
+          Create button doesn't get squeezed next to a long heading on
+          narrow screens. */}
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        justifyContent="space-between"
+        alignItems={{ xs: "stretch", sm: "center" }}
+        spacing={1}
+        sx={{ mb: 2 }}
+      >
+        <Typography variant="h5">Products</Typography>
+        <Stack direction="row" spacing={1} justifyContent={{ xs: "flex-end", sm: "flex-start" }}>
+          <IconButton onClick={() => refetch()} disabled={isRefreshing}>
+            <RefreshIcon />
+          </IconButton>
           {canWrite && (
-            <Link to="new" style={styles.createBtn}>
-              + Create product
-            </Link>
+            <Button component={RouterLink} to="new" variant="contained" startIcon={<AddIcon />}>
+              Create product
+            </Button>
           )}
-        </div>
-      </div>
+        </Stack>
+      </Stack>
 
-      <table style={styles.table}>
-        <thead>
-          <tr>
-            <th>SKU</th>
-            <th>Name</th>
-            <th>Price</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {data.products.map((p) => (
-            <tr key={p.id}>
-              <td>{p.sku}</td>
-              <td>{p.name}</td>
-              <td>
-                {(p.priceCents / 100).toFixed(2)} {p.currency}
-              </td>
-              <td>{canWrite && <Link to={`${p.id}/edit`}>Edit</Link>}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* TableContainer scrolls horizontally on its own if content is
+          still too wide after hiding columns below — never clips. */}
+      <TableContainer component={Paper}>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>SKU</TableCell>
+              <TableCell>Name</TableCell>
+              <TableCell>Price</TableCell>
+              <TableCell align="right" />
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {data.products.map((p) => (
+              <TableRow key={p.id} hover>
+                <TableCell>{p.sku}</TableCell>
+                <TableCell>{p.name}</TableCell>
+                <TableCell>
+                  {(p.priceCents / 100).toFixed(2)} {p.currency}
+                </TableCell>
+                <TableCell align="right">
+                  {canWrite && (
+                    <IconButton component={RouterLink} to={`${p.id}/edit`} size="small">
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
-      <Pagination
-        page={page}
-        pageSize={PAGE_SIZE}
-        itemCount={data.products.length}
-        onPageChange={setPage}
-      />
+      <Pagination page={page} pageSize={PAGE_SIZE} itemCount={data.products.length} onPageChange={setPage} />
 
       {!canWrite && (
-        <p style={{ color: "#888" }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
           You need the <code>product:write</code> role to create or edit products.
-        </p>
+        </Typography>
       )}
-    </div>
+    </Box>
   );
 }
-
-const styles = {
-  headerRow: { display: "flex", justifyContent: "space-between", alignItems: "center" },
-  headerActions: { display: "flex", gap: 8, alignItems: "center" },
-  refreshBtn: {
-    padding: "6px 12px",
-    border: "1px solid #ccc",
-    borderRadius: 4,
-    background: "#fff",
-    cursor: "pointer",
-    fontSize: 13,
-  },
-  createBtn: {
-    textDecoration: "none",
-    background: "#1a73e8",
-    color: "#fff",
-    padding: "6px 12px",
-    borderRadius: 4,
-    fontSize: 13,
-  },
-  table: { width: "100%", borderCollapse: "collapse", marginTop: 12 },
-};

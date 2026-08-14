@@ -1,138 +1,159 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
 import { useQuery } from "@apollo/client";
 import { authClient } from "@demo/shared-auth";
 import { ORDERS_QUERY } from "../graphql/orderQueries";
 import Pagination from "./Pagination";
-import SortableHeader from "./SortableHeader";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import Table from "@mui/material/Table";
+import TableHead from "@mui/material/TableHead";
+import TableBody from "@mui/material/TableBody";
+import TableRow from "@mui/material/TableRow";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableSortLabel from "@mui/material/TableSortLabel";
+import Paper from "@mui/material/Paper";
+import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
+import Alert from "@mui/material/Alert";
+import AddIcon from "@mui/icons-material/Add";
+import RefreshIcon from "@mui/icons-material/Refresh";
 
 const PAGE_SIZE = 20;
 const DEFAULT_SORT_FIELD = "CREATED_AT";
 const DEFAULT_SORT_DIRECTION = "DESC";
 
-// Requirement #8 in action: even though every order can have many items,
-// and every item resolves a `product`, the order-service DataLoader
-// collapses all of those product lookups into a single batched call to
-// product-service — this query does NOT cause N+1 network requests.
+// `hideOnMobile: true` columns are dropped below the `sm` breakpoint
+// (600px) — the table still fits a phone without horizontal scrolling
+// for the columns that matter most there (Customer/Status/Items).
+const COLUMNS = [
+  { field: "CUSTOMER_ID", label: "Customer" },
+  { field: "STATUS", label: "Status" },
+  { field: null, label: "Items" },
+  { field: "CREATED_AT", label: "Created", hideOnMobile: true },
+  { field: "UPDATED_AT", label: "Updated", hideOnMobile: true },
+];
+
 export default function OrderList() {
   const [page, setPage] = useState(0);
   const [sortField, setSortField] = useState(DEFAULT_SORT_FIELD);
   const [sortDirection, setSortDirection] = useState(DEFAULT_SORT_DIRECTION);
 
-  const handleSort = (field, direction) => {
-    setSortField(field);
-    setSortDirection(direction);
+  const handleSort = (field) => {
+    if (field === sortField) {
+      setSortDirection(sortDirection === "DESC" ? "ASC" : "DESC");
+    } else {
+      setSortField(field);
+      setSortDirection("DESC");
+    }
     setPage(0);
   };
 
   const variables = { page, size: PAGE_SIZE, sortField, sortDirection };
-
-  // Production-safe default: polling, same pattern as ProductList — no
-  // WebSocket/subscription infrastructure (no OrderChangeListener, no
-  // Postgres LISTEN/NOTIFY, no WebSocketAuthInterceptor, no graphql-ws on
-  // the client). Coarser than push (background changes take up to 15s to
-  // show, instead of instantly), but avoids the entire class of
-  // production problems raised earlier: Postgres NOTIFY not being a
-  // high-throughput event bus, one dedicated DB connection held open per
-  // replica, and unfiltered per-subscriber fan-out cost. Simpler
-  // operationally, and correctness doesn't depend on a persistent
-  // connection surviving deploys/network blips.
   const { data, loading, error, refetch, networkStatus } = useQuery(ORDERS_QUERY, {
     variables,
     pollInterval: 15_000,
-    notifyOnNetworkStatusChange: true, // so `networkStatus` updates during refetch()/poll, driving the spinner below
+    notifyOnNetworkStatusChange: true,
   });
 
   const canWrite = authClient.hasRole("order:write");
-  const isRefreshing = networkStatus === 4; // Apollo's NetworkStatus.refetch
+  const isRefreshing = networkStatus === 4;
 
-  if (loading && !data) return <p>Loading orders…</p>;
-  if (error) return <p style={{ color: "crimson" }}>Error: {error.message}</p>;
+  if (loading && !data) return <CircularProgress />;
+  if (error) return <Alert severity="error">{error.message}</Alert>;
 
   return (
-    <div>
-      <div style={styles.headerRow}>
-        <h2>Orders</h2>
-        <div style={styles.headerActions}>
-          <button onClick={() => refetch()} disabled={isRefreshing} style={styles.refreshBtn}>
-            {isRefreshing ? "Refreshing…" : "⟳ Refresh"}
-          </button>
+    <Box>
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        justifyContent="space-between"
+        alignItems={{ xs: "stretch", sm: "center" }}
+        spacing={1}
+        sx={{ mb: 2 }}
+      >
+        <Typography variant="h5">Orders</Typography>
+        <Stack direction="row" spacing={1} justifyContent={{ xs: "flex-end", sm: "flex-start" }}>
+          <IconButton onClick={() => refetch()} disabled={isRefreshing}>
+            <RefreshIcon />
+          </IconButton>
           {canWrite && (
-            <Link to="new" style={styles.createBtn}>
-              + Create order
-            </Link>
+            <Button component={RouterLink} to="new" variant="contained" startIcon={<AddIcon />}>
+              Create order
+            </Button>
           )}
-        </div>
-      </div>
+        </Stack>
+      </Stack>
 
-      <table style={styles.table}>
-        <thead>
-          <tr>
-            <SortableHeader
-              label="Customer"
-              field="CUSTOMER_ID"
-              sortField={sortField}
-              sortDirection={sortDirection}
-              onSort={handleSort}
-            />
-            <SortableHeader
-              label="Status"
-              field="STATUS"
-              sortField={sortField}
-              sortDirection={sortDirection}
-              onSort={handleSort}
-            />
-            <th style={styles.th}>Items</th>
-            <SortableHeader
-              label="Created"
-              field="CREATED_AT"
-              sortField={sortField}
-              sortDirection={sortDirection}
-              onSort={handleSort}
-            />
-            <SortableHeader
-              label="Updated"
-              field="UPDATED_AT"
-              sortField={sortField}
-              sortDirection={sortDirection}
-              onSort={handleSort}
-            />
-            <th style={styles.th} />
-          </tr>
-        </thead>
-        <tbody>
-          {data.orders.map((order) => (
-            <tr key={order.id} style={styles.row}>
-              <td style={styles.td}>{order.customerId}</td>
-              <td style={styles.td}>
-                <span style={styles.statusBadge}>{order.status}</span>
-              </td>
-              <td style={styles.td}>
-                {order.items.map((item) => (
-                  <div key={item.id} style={styles.itemLine}>
-                    {item.quantity} × {item.product?.name ?? "(unknown product)"}
-                  </div>
-                ))}
-              </td>
-              <td style={styles.td}>{formatDate(order.createdAt)}</td>
-              <td style={styles.td}>{formatDate(order.updatedAt)}</td>
-              <td style={styles.td}>
-                {canWrite && <Link to={`${order.id}/edit`}>Update status</Link>}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <TableContainer component={Paper}>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              {COLUMNS.map((col) => (
+                <TableCell
+                  key={col.label}
+                  sx={col.hideOnMobile ? { display: { xs: "none", sm: "table-cell" } } : undefined}
+                >
+                  {col.field ? (
+                    <TableSortLabel
+                      active={sortField === col.field}
+                      direction={sortField === col.field ? sortDirection.toLowerCase() : "desc"}
+                      onClick={() => handleSort(col.field)}
+                    >
+                      {col.label}
+                    </TableSortLabel>
+                  ) : (
+                    col.label
+                  )}
+                </TableCell>
+              ))}
+              <TableCell align="right" />
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {data.orders.map((order) => (
+              <TableRow key={order.id} hover>
+                <TableCell>{order.customerId}</TableCell>
+                <TableCell>
+                  <Chip label={order.status} size="small" color="primary" variant="outlined" />
+                </TableCell>
+                <TableCell>
+                  {order.items.map((item) => (
+                    <Typography key={item.id} variant="body2">
+                      {item.quantity} × {item.product?.name ?? "(unknown product)"}
+                    </Typography>
+                  ))}
+                </TableCell>
+                <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
+                  {formatDate(order.createdAt)}
+                </TableCell>
+                <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
+                  {formatDate(order.updatedAt)}
+                </TableCell>
+                <TableCell align="right">
+                  {canWrite && (
+                    <Button component={RouterLink} to={`${order.id}/edit`} size="small">
+                      Update
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
-      {data.orders.length === 0 && <p style={{ color: "#888" }}>No orders on this page.</p>}
+      {data.orders.length === 0 && (
+        <Typography color="text.secondary" sx={{ mt: 2 }}>
+          No orders on this page.
+        </Typography>
+      )}
 
-      <Pagination
-        page={page}
-        pageSize={PAGE_SIZE}
-        itemCount={data.orders.length}
-        onPageChange={setPage}
-      />
-    </div>
+      <Pagination page={page} pageSize={PAGE_SIZE} itemCount={data.orders.length} onPageChange={setPage} />
+    </Box>
   );
 }
 
@@ -144,41 +165,3 @@ function formatDate(isoString) {
     return isoString;
   }
 }
-
-const styles = {
-  headerRow: { display: "flex", justifyContent: "space-between", alignItems: "center" },
-  headerActions: { display: "flex", gap: 8, alignItems: "center" },
-  refreshBtn: {
-    padding: "6px 12px",
-    border: "1px solid #ccc",
-    borderRadius: 4,
-    background: "#fff",
-    cursor: "pointer",
-    fontSize: 13,
-  },
-  createBtn: {
-    textDecoration: "none",
-    background: "#1a73e8",
-    color: "#fff",
-    padding: "6px 12px",
-    borderRadius: 4,
-    fontSize: 13,
-  },
-  table: { width: "100%", borderCollapse: "collapse", marginTop: 12 },
-  th: {
-    textAlign: "left",
-    padding: "8px 6px",
-    borderBottom: "2px solid #ddd",
-    whiteSpace: "nowrap",
-  },
-  row: { borderBottom: "1px solid #eee" },
-  td: { padding: "8px 6px", verticalAlign: "top" },
-  itemLine: { fontSize: 13 },
-  statusBadge: {
-    fontSize: 12,
-    padding: "2px 8px",
-    borderRadius: 12,
-    background: "#eef2ff",
-    color: "#3730a3",
-  },
-};

@@ -1,10 +1,9 @@
 import React, { useState } from "react";
+import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
 
-/**
- * Individual, reusable component: the same form drives both "create" and
- * "edit" — only the initial values, submit handler, and button label
- * differ between the two screens that use it.
- */
 export default function ProductForm({ initialValues, onSubmit, submitLabel, submitting }) {
   const [values, setValues] = useState({
     sku: initialValues?.sku ?? "",
@@ -28,54 +27,51 @@ export default function ProductForm({ initialValues, onSubmit, submitLabel, subm
   };
 
   return (
-    <form onSubmit={handleSubmit} style={styles.form}>
-      {!initialValues && (
-        <label style={styles.field}>
-          SKU
-          <input value={values.sku} onChange={handleChange("sku")} required />
-        </label>
-      )}
-      <label style={styles.field}>
-        Name
-        <input value={values.name} onChange={handleChange("name")} required />
-      </label>
-      <label style={styles.field}>
-        Description
-        <textarea value={values.description} onChange={handleChange("description")} rows={3} />
-      </label>
-      <label style={styles.field}>
-        Price (cents)
-        <input
-          type="number"
-          min={0}
-          value={values.priceCents}
-          onChange={handleChange("priceCents")}
-          required
-        />
-      </label>
-      {!initialValues && (
-        <label style={styles.field}>
-          Currency
-          <input value={values.currency} onChange={handleChange("currency")} />
-        </label>
-      )}
-      <button type="submit" disabled={submitting} style={styles.submit}>
-        {submitting ? "Saving…" : submitLabel}
-      </button>
-    </form>
+    <Box component="form" onSubmit={handleSubmit} sx={{ maxWidth: { xs: "100%", sm: 480, md: 640 } }}>
+      {/* Grid: stacked (xs=12) on mobile, two columns (sm=6) from tablet
+          up, so the form uses space efficiently on wider screens without
+          becoming cramped on a phone. */}
+      <Grid container spacing={2}>
+        {!initialValues && (
+          <Grid item xs={12} sm={6}>
+            <TextField label="SKU" value={values.sku} onChange={handleChange("sku")} required fullWidth />
+          </Grid>
+        )}
+        <Grid item xs={12} sm={initialValues ? 12 : 6}>
+          <TextField label="Name" value={values.name} onChange={handleChange("name")} required fullWidth />
+        </Grid>
+        <Grid item xs={12}>
+          <TextField
+            label="Description"
+            value={values.description}
+            onChange={handleChange("description")}
+            multiline
+            rows={3}
+            fullWidth
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            label="Price (cents)"
+            type="number"
+            value={values.priceCents}
+            onChange={handleChange("priceCents")}
+            required
+            fullWidth
+          />
+        </Grid>
+        {!initialValues && (
+          <Grid item xs={12} sm={6}>
+            <TextField label="Currency" value={values.currency} onChange={handleChange("currency")} fullWidth />
+          </Grid>
+        )}
+        <Grid item xs={12}>
+          <Button type="submit" variant="contained" disabled={submitting} fullWidth={false}
+            sx={{ width: { xs: "100%", sm: "auto" } }}>
+            {submitting ? "Saving…" : submitLabel}
+          </Button>
+        </Grid>
+      </Grid>
+    </Box>
   );
 }
-
-const styles = {
-  form: { display: "flex", flexDirection: "column", gap: 10, maxWidth: 360 },
-  field: { display: "flex", flexDirection: "column", gap: 4, fontSize: 13 },
-  submit: {
-    marginTop: 8,
-    padding: "8px 14px",
-    border: "none",
-    borderRadius: 4,
-    background: "#1a73e8",
-    color: "#fff",
-    cursor: "pointer",
-  },
-};

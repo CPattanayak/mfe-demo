@@ -1,8 +1,15 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER, ORDERS_QUERY } from "../graphql/orderQueries";
 import OrderItemsEditor from "./OrderItemsEditor";
+import Box from "@mui/material/Box";
+import Grid from "@mui/material/Grid";
+import Typography from "@mui/material/Typography";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+import Link from "@mui/material/Link";
+import Alert from "@mui/material/Alert";
 
 export default function OrderCreate() {
   const navigate = useNavigate();
@@ -29,39 +36,43 @@ export default function OrderCreate() {
   };
 
   return (
-    <div>
-      <Link to="/orders">&larr; Back to orders</Link>
-      <h2>Create order</h2>
-      {error && <p style={{ color: "crimson" }}>{error.message}</p>}
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <label style={styles.field}>
-          Customer ID
-          <input value={customerId} onChange={(e) => setCustomerId(e.target.value)} required />
-        </label>
-
-        <div style={styles.field}>
-          <span>Items</span>
-          <OrderItemsEditor items={items} onChange={setItems} />
-        </div>
-
-        <button type="submit" disabled={loading} style={styles.submit}>
-          {loading ? "Creating…" : "Create order"}
-        </button>
-      </form>
-    </div>
+    <Box sx={{ maxWidth: { xs: "100%", sm: 480, md: 640 } }}>
+      <Link component={RouterLink} to="/orders" underline="hover">
+        &larr; Back to orders
+      </Link>
+      <Typography variant="h5" sx={{ my: 2 }}>
+        Create order
+      </Typography>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error.message}</Alert>}
+      <Box component="form" onSubmit={handleSubmit}>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              label="Customer ID"
+              value={customerId}
+              onChange={(e) => setCustomerId(e.target.value)}
+              required
+              fullWidth
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+              Items
+            </Typography>
+            <OrderItemsEditor items={items} onChange={setItems} />
+          </Grid>
+          <Grid item xs={12}>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={loading}
+              sx={{ width: { xs: "100%", sm: "auto" } }}
+            >
+              {loading ? "Creating…" : "Create order"}
+            </Button>
+          </Grid>
+        </Grid>
+      </Box>
+    </Box>
   );
 }
-
-const styles = {
-  form: { display: "flex", flexDirection: "column", gap: 12, maxWidth: 420 },
-  field: { display: "flex", flexDirection: "column", gap: 4, fontSize: 13 },
-  submit: {
-    marginTop: 8,
-    padding: "8px 14px",
-    border: "none",
-    borderRadius: 4,
-    background: "#1a73e8",
-    color: "#fff",
-    cursor: "pointer",
-  },
-};

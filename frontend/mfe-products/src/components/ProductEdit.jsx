@@ -1,8 +1,13 @@
 import React from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams, Link as RouterLink } from "react-router-dom";
 import { useMutation, useQuery } from "@apollo/client";
 import { PRODUCT_QUERY, UPDATE_PRODUCT, PRODUCTS_QUERY } from "../graphql/productQueries";
 import ProductForm from "./ProductForm";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Link from "@mui/material/Link";
+import Alert from "@mui/material/Alert";
+import CircularProgress from "@mui/material/CircularProgress";
 
 export default function ProductEdit() {
   const { id } = useParams();
@@ -17,15 +22,19 @@ export default function ProductEdit() {
     onCompleted: () => navigate("/products"),
   });
 
-  if (loadingProduct) return <p>Loading product…</p>;
-  if (loadError) return <p style={{ color: "crimson" }}>{loadError.message}</p>;
-  if (!data?.product) return <p>Product not found.</p>;
+  if (loadingProduct) return <CircularProgress />;
+  if (loadError) return <Alert severity="error">{loadError.message}</Alert>;
+  if (!data?.product) return <Typography>Product not found.</Typography>;
 
   return (
-    <div>
-      <Link to="/products">&larr; Back to products</Link>
-      <h2>Edit product — {data.product.sku}</h2>
-      {saveError && <p style={{ color: "crimson" }}>{saveError.message}</p>}
+    <Box sx={{ maxWidth: { xs: "100%", sm: 480, md: 640 } }}>
+      <Link component={RouterLink} to="/products" underline="hover">
+        &larr; Back to products
+      </Link>
+      <Typography variant="h5" sx={{ my: 2 }}>
+        Edit product — {data.product.sku}
+      </Typography>
+      {saveError && <Alert severity="error" sx={{ mb: 2 }}>{saveError.message}</Alert>}
       <ProductForm
         initialValues={data.product}
         submitLabel="Save changes"
@@ -43,6 +52,6 @@ export default function ProductEdit() {
           })
         }
       />
-    </div>
+    </Box>
   );
 }

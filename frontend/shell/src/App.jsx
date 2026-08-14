@@ -1,31 +1,31 @@
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import ThemeProvider from "@mui/material/styles/ThemeProvider";
+import CssBaseline from "@mui/material/CssBaseline";
+import Container from "@mui/material/Container";
+import LinearProgress from "@mui/material/LinearProgress";
 import Header from "./components/Header";
+import { theme } from "./theme";
 
-// Requirement #1: lazily-loaded remote micro-frontends via Module Federation.
-// Each remote owns its OWN internal list/create/edit routes (mounted at
-// "/products/*" and "/orders/*") — the shell only needs to know the base
-// path, not every sub-route inside a given micro-frontend.
 const ProductsApp = lazy(() => import("mfeProducts/ProductsApp"));
 const OrdersApp = lazy(() => import("mfeOrders/OrdersApp"));
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Header />
-      <main style={styles.main}>
-        <Suspense fallback={<p>Loading micro-frontend…</p>}>
-          <Routes>
-            <Route path="/products/*" element={<ProductsApp />} />
-            <Route path="/orders/*" element={<OrdersApp />} />
-            <Route path="/" element={<Navigate to="/products" replace />} />
-          </Routes>
-        </Suspense>
-      </main>
-    </BrowserRouter>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <BrowserRouter>
+        <Header />
+        <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 3 }, px: { xs: 1.5, sm: 3 } }}>
+          <Suspense fallback={<LinearProgress />}>
+            <Routes>
+              <Route path="/products/*" element={<ProductsApp />} />
+              <Route path="/orders/*" element={<OrdersApp />} />
+              <Route path="/" element={<Navigate to="/products" replace />} />
+            </Routes>
+          </Suspense>
+        </Container>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
-
-const styles = {
-  main: { padding: 20, fontFamily: "sans-serif" },
-};

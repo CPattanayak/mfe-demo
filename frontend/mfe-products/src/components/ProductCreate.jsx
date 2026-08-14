@@ -1,8 +1,12 @@
 import React from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { useMutation } from "@apollo/client";
 import { CREATE_PRODUCT, PRODUCTS_QUERY } from "../graphql/productQueries";
 import ProductForm from "./ProductForm";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Link from "@mui/material/Link";
+import Alert from "@mui/material/Alert";
 
 export default function ProductCreate() {
   const navigate = useNavigate();
@@ -12,10 +16,14 @@ export default function ProductCreate() {
   });
 
   return (
-    <div>
-      <Link to="/products">&larr; Back to products</Link>
-      <h2>Create product</h2>
-      {error && <p style={{ color: "crimson" }}>{error.message}</p>}
+    <Box sx={{ maxWidth: { xs: "100%", sm: 480, md: 640 } }}>
+      <Link component={RouterLink} to="/products" underline="hover">
+        &larr; Back to products
+      </Link>
+      <Typography variant="h5" sx={{ my: 2 }}>
+        Create product
+      </Typography>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error.message}</Alert>}
       <ProductForm
         submitLabel="Create product"
         submitting={loading}
@@ -33,6 +41,6 @@ export default function ProductCreate() {
           })
         }
       />
-    </div>
+    </Box>
   );
 }

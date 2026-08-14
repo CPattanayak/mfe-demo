@@ -1,11 +1,12 @@
 import React from "react";
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import IconButton from "@mui/material/IconButton";
+import Button from "@mui/material/Button";
+import DeleteIcon from "@mui/icons-material/Delete";
+import AddIcon from "@mui/icons-material/Add";
 
-/**
- * Individual, reusable component: an editable list of {productId, quantity}
- * rows, used by OrderCreate. Kept separate from the form/page component so
- * it can be tested or reused (e.g. in a future "add items to order" screen)
- * on its own.
- */
 export default function OrderItemsEditor({ items, onChange }) {
   const updateItem = (index, field, value) => {
     const next = items.slice();
@@ -17,46 +18,38 @@ export default function OrderItemsEditor({ items, onChange }) {
   const removeRow = (index) => onChange(items.filter((_, i) => i !== index));
 
   return (
-    <div>
+    <Stack spacing={1.5}>
       {items.map((item, index) => (
-        <div key={index} style={styles.row}>
-          <input
-            placeholder="Product ID"
+        // Rows stack fields vertically on mobile (each TextField full
+        // width) and go side-by-side from tablet up.
+        <Stack key={index} direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+          <TextField
+            label="Product ID"
             value={item.productId}
             onChange={(e) => updateItem(index, "productId", e.target.value)}
             required
-            style={styles.productIdInput}
+            size="small"
+            fullWidth
+            sx={{ flex: { sm: 1 } }}
           />
-          <input
-            type="number"
-            min={1}
-            value={item.quantity}
-            onChange={(e) => updateItem(index, "quantity", Number(e.target.value))}
-            style={styles.qtyInput}
-          />
-          <button type="button" onClick={() => removeRow(index)} style={styles.removeBtn}>
-            Remove
-          </button>
-        </div>
+          <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+            <TextField
+              label="Qty"
+              type="number"
+              value={item.quantity}
+              onChange={(e) => updateItem(index, "quantity", Number(e.target.value))}
+              size="small"
+              sx={{ width: 90, flexShrink: 0 }}
+            />
+            <IconButton onClick={() => removeRow(index)} color="error" size="small">
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        </Stack>
       ))}
-      <button type="button" onClick={addRow} style={styles.addBtn}>
-        + Add item
-      </button>
-    </div>
+      <Button startIcon={<AddIcon />} onClick={addRow} sx={{ alignSelf: "flex-start" }}>
+        Add item
+      </Button>
+    </Stack>
   );
 }
-
-const styles = {
-  row: { display: "flex", gap: 8, marginBottom: 6, alignItems: "center" },
-  productIdInput: { flex: 1 },
-  qtyInput: { width: 70 },
-  removeBtn: { border: "none", background: "none", color: "crimson", cursor: "pointer" },
-  addBtn: {
-    marginTop: 4,
-    border: "1px dashed #999",
-    background: "#fff",
-    borderRadius: 4,
-    padding: "4px 10px",
-    cursor: "pointer",
-  },
-};

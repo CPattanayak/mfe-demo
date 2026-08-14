@@ -1,44 +1,42 @@
-import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import Button from "@mui/material/Button";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 
 /**
- * A top-level nav item ("Products", "Orders") with List/Create sub-links
- * underneath it — the shell-level equivalent of each micro-frontend's own
- * internal create/edit/list routes.
+ * Top-level nav item ("Products", "Orders") that opens an MUI Menu
+ * submenu with List/Create — replaces the old always-visible sub-links.
  */
 export default function NavGroup({ label, basePath }) {
+  const navigate = useNavigate();
   const location = useLocation();
   const isActive = location.pathname.startsWith(basePath);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const open = Boolean(anchorEl);
+
+  const handleOpen = (e) => setAnchorEl(e.currentTarget);
+  const handleClose = () => setAnchorEl(null);
+  const go = (path) => {
+    navigate(path);
+    handleClose();
+  };
 
   return (
-    <div style={styles.group}>
-      <Link
-        to={basePath}
-        style={{ ...styles.groupLabel, ...(isActive ? styles.active : {}) }}
+    <>
+      <Button
+        onClick={handleOpen}
+        color={isActive ? "primary" : "inherit"}
+        endIcon={<ArrowDropDownIcon />}
+        sx={{ textTransform: "none", fontWeight: 600 }}
       >
         {label}
-      </Link>
-      <div style={styles.subLinks}>
-        <Link to={basePath} style={styles.subLink}>
-          List
-        </Link>
-        <Link to={`${basePath}/new`} style={styles.subLink}>
-          Create
-        </Link>
-      </div>
-    </div>
+      </Button>
+      <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
+        <MenuItem onClick={() => go(basePath)}>List</MenuItem>
+        <MenuItem onClick={() => go(`${basePath}/new`)}>Create</MenuItem>
+      </Menu>
+    </>
   );
 }
-
-const styles = {
-  group: { display: "flex", flexDirection: "column", gap: 2 },
-  groupLabel: {
-    textDecoration: "none",
-    color: "#1a73e8",
-    fontWeight: 600,
-    fontSize: 15,
-  },
-  active: { textDecoration: "underline" },
-  subLinks: { display: "flex", gap: 10, fontSize: 12 },
-  subLink: { textDecoration: "none", color: "#666" },
-};
