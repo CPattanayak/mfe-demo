@@ -1,0 +1,67 @@
+# Static Federation 2 subgraph SDL for order-service — see product.graphql's
+# header comment for why this exists and its keep-in-sync-by-hand trade-off.
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key"])
+
+type Order @key(fields: "id") {
+    id: ID!
+    customerId: String!
+    status: String!
+    items: [OrderItem!]!
+    createdAt: String!
+    updatedAt: String!
+}
+
+type OrderItem {
+    id: ID!
+    productId: ID!
+    quantity: Int!
+    unitPriceCents: Int!
+    product: OrderProductSummary
+}
+
+type OrderProductSummary {
+    id: ID!
+    sku: String!
+    name: String!
+    priceCents: Int!
+    currency: String!
+}
+
+input CreateOrderItemInput {
+    productId: ID!
+    quantity: Int!
+}
+
+input CreateOrderInput {
+    customerId: String!
+    items: [CreateOrderItemInput!]!
+}
+
+enum OrderSortField {
+    CREATED_AT
+    UPDATED_AT
+    STATUS
+    CUSTOMER_ID
+}
+
+enum SortDirection {
+    ASC
+    DESC
+}
+
+type Query {
+    orders(
+        page: Int = 0
+        size: Int = 20
+        sortField: OrderSortField = CREATED_AT
+        sortDirection: SortDirection = DESC
+    ): [Order!]!
+    order(id: ID!): Order
+    orderItem(id: ID!): OrderItem
+}
+
+type Mutation {
+    createOrder(input: CreateOrderInput!): Order!
+    updateOrderStatus(id: ID!, status: String!): Order!
+}

@@ -1,4 +1,9 @@
-type Order {
+"""
+@key(fields: "id") makes Order a federation ENTITY, resolvable by Router
+across subgraph boundaries — see FederationConfig.java. Independent of
+OrderItem.product below, which is unrelated to federation entirely.
+"""
+type Order @key(fields: "id") {
     id: ID!
     customerId: String!
     status: String!
@@ -13,11 +18,24 @@ type OrderItem {
     quantity: Int!
     unitPriceCents: Int!
     "Resolved via a batched DataLoader call to product-service — see ProductDataLoader"
-    product: Product
+    product: OrderProductSummary
 }
 
-"Shadow type mirroring product-service's Product, populated across the network"
-type Product {
+"""
+Deliberately NOT named "Product" and deliberately NOT a federation
+extension of product-service's real Product entity. This is order-
+service's own local mirror type, populated by its existing DataLoader/
+WebClient call to product-service's productsByIds query — a completely
+different, already-working mechanism from federation's @key/_entities.
+Naming it "Product" would collide with product-service's federated
+Product type at Apollo Router's schema COMPOSITION step (two subgraphs
+can't both declare an un-extended type with the same name). Converting
+OrderItem.product to true cross-subgraph entity resolution instead of
+this DataLoader is a valid future step — not done here, to keep the
+existing, working DataLoader mechanism (one of this project's original
+requirements) intact.
+"""
+type OrderProductSummary {
     id: ID!
     sku: String!
     name: String!

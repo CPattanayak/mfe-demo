@@ -1,4 +1,16 @@
-type Product {
+"""
+@key(fields: "id") makes this a federation ENTITY: other subgraphs
+(order-service) can reference a Product by id alone (a "stub"/
+"representation") without knowing any of its other fields, and Apollo
+Router will call this subgraph's entity resolver to fill in whatever
+fields the original query actually asked for. This is federation's own
+built-in answer to N+1 — Router batches every stub reference collected
+across a response into ONE _entities call per subgraph, the same shape
+of problem our own DataLoader (see order-service/ProductBatchLoader)
+solves manually. Both mechanisms are kept in this project side by side —
+see backend/README-FEDERATION.md for why.
+"""
+type Product @key(fields: "id") {
     id: ID!
     sku: String!
     name: String!

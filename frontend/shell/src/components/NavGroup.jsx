@@ -19,7 +19,7 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
  * knows the user can't complete. `createRole` is optional — omit it for
  * a nav group that has no write-gated create action.
  */
-export default function NavGroup({ label, basePath, createRole }) {
+export default function NavGroup({ label, basePath, createRole, extraItems = [] }) {
   const navigate = useNavigate();
   const location = useLocation();
   const isActive = location.pathname.startsWith(basePath);
@@ -47,6 +47,11 @@ export default function NavGroup({ label, basePath, createRole }) {
       <Menu anchorEl={anchorEl} open={open} onClose={handleClose}>
         <MenuItem onClick={() => go(basePath)}>List</MenuItem>
         {canCreate && <MenuItem onClick={() => go(`${basePath}/new`)}>Create</MenuItem>}
+        {extraItems.map((item) => (
+          <MenuItem key={item.path} onClick={() => go(item.path)}>
+            {item.label}
+          </MenuItem>
+        ))}
       </Menu>
     </>
   );

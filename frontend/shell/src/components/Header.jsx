@@ -19,6 +19,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import InventoryIcon from "@mui/icons-material/Inventory2";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import HubIcon from "@mui/icons-material/Hub";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
 import { authClient } from "@demo/shared-auth";
@@ -30,6 +31,7 @@ const NAV_ITEMS = [
   { label: "New product", path: "/products/new", icon: AddCircleOutlineIcon, requiresRole: "product:write" },
   { label: "Orders", path: "/orders", icon: ReceiptLongIcon },
   { label: "New order", path: "/orders/new", icon: AddCircleOutlineIcon, requiresRole: "order:write" },
+  { label: "Federation demo", path: "/orders/federation-demo", icon: HubIcon },
 ];
 
 export default function Header() {
@@ -92,7 +94,12 @@ export default function Header() {
         {/* Desktop/tablet: inline nav with submenus */}
         <Box sx={{ display: { xs: "none", md: "flex" }, gap: 1, flexGrow: 1 }}>
           <NavGroup label="Products" basePath="/products" createRole="product:write" />
-          <NavGroup label="Orders" basePath="/orders" createRole="order:write" />
+          <NavGroup
+            label="Orders"
+            basePath="/orders"
+            createRole="order:write"
+            extraItems={[{ label: "Federation demo", path: "/orders/federation-demo" }]}
+          />
         </Box>
         <Box sx={{ display: { xs: "block", md: "none" }, flexGrow: 1 }} />
 

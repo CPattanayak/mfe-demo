@@ -5,14 +5,23 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="72ecbfc3-5308-49d8-9298-724ce416c9e3" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/order-service/src/main/java/com/demo/order/graphql/OrderGraphQLController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/order-service/src/main/java/com/demo/order/graphql/OrderGraphQLController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/order-service/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/order-service/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/order-service/src/main/resources/graphql/schema.graphqls" beforeDir="false" afterPath="$PROJECT_DIR$/backend/order-service/src/main/resources/graphql/schema.graphqls" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderEdit.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderEdit.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderItemDetailsDialog.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderItemDetailsDialog.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/product-service/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/product-service/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/product-service/src/main/resources/graphql/schema.graphqls" beforeDir="false" afterPath="$PROJECT_DIR$/backend/product-service/src/main/resources/graphql/schema.graphqls" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cdn/nginx.conf" beforeDir="false" afterPath="$PROJECT_DIR$/cdn/nginx.conf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker-compose.qa.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.qa.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/OrdersApp.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/OrdersApp.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderItemsEditor.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderItemsEditor.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderList.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderList.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/graphql/orderQueries.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/graphql/orderQueries.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/graphql/productLookupQueries.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/graphql/productLookupQueries.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/productLookupClientContext.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/mfe-products/src/ProductsApp.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-products/src/ProductsApp.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/shared-auth/src/config.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/shared-auth/src/config.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/shell/src/components/Header.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/shell/src/components/Header.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/shell/src/components/NavGroup.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/shell/src/components/NavGroup.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -36,6 +45,7 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
+    &quot;Maven.mfe-demo-parent [clean].executor&quot;: &quot;Run&quot;,
     &quot;Maven.mfe-demo-parent [compile].executor&quot;: &quot;Run&quot;,
     &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,

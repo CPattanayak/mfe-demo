@@ -14,10 +14,13 @@ import ProductEdit from "./components/ProductEdit";
  *   /products/:id/edit -> ProductEdit
  */
 export default function ProductsApp() {
-  // One Apollo Client per remote/backend, built from the shared
-  // authClient token-refresh logic (requirement #4 & #6), pointed at this
-  // environment's product-service URL (requirement: config.js).
-  const client = useMemo(() => createApolloClient(config.productGraphqlUrl), []);
+  // Federation fix: was config.productGraphqlUrl (a product-service-
+  // specific URL) — now config.graphqlUrl, the single endpoint served by
+  // Apollo Router (composed supergraph of both subgraphs). No separate
+  // gateway service; local dev hits Router directly, QA/production reach
+  // it via cdn/nginx.conf's reverse proxy. mfe-orders points at this
+  // exact same URL now too.
+  const client = useMemo(() => createApolloClient(config.graphqlUrl), []);
 
   return (
     <ApolloProvider client={client}>

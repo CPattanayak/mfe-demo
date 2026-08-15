@@ -105,6 +105,40 @@ services:
     ports:
       - "8082:8082"
 
+  # ---------------------------------------------------------------------
+  # Federation layer: rover composes both subgraphs' STATIC SDL files
+  # (product.graphql/order.graphql, kept in sync by hand with each
+  # service's real schema.graphqls) into ONE supergraph.graphql — an
+  # offline step, NOT done by Router itself. Apollo Router then loads
+  # that file and does the actual federation query planning/parallel
+  # subgraph execution at request time. See infra/apollo-router/ for all
+  # the config files. File-based composition means this doesn't need
+  # product-service/order-service to be running at all to compose — it
+  # runs immediately, in parallel with them starting up.
+  # ---------------------------------------------------------------------
+  supergraph-compose:
+    build:
+      context: ./infra/apollo-router/rover-compose
+    container_name: supergraph-compose
+    volumes:
+      - ./infra/apollo-router/supergraph-config.yaml:/workspace/supergraph-config.yaml:ro
+      - ./infra/apollo-router/product.graphql:/workspace/product.graphql:ro
+      - ./infra/apollo-router/order.graphql:/workspace/order.graphql:ro
+      - supergraph-schema:/output
+
+  apollo-router:
+    image: ghcr.io/apollographql/router:v1.59.2
+    container_name: apollo-router
+    depends_on:
+      supergraph-compose:
+        condition: service_completed_successfully
+    volumes:
+      - supergraph-schema:/dist/schema
+      - ./infra/apollo-router/router.yaml:/dist/config/router.yaml:ro
+    command: ["-c", "config/router.yaml", "-s", "schema/supergraph.graphql", "--log", "info"]
+    ports:
+      - "4000:4000"
+
   shell:
     build:
       context: ./frontend
@@ -117,6 +151,12 @@ services:
       PRODUCTS_REMOTE_URL: http://localhost:3001/remoteEntry.js
       ORDERS_REMOTE_URL: http://localhost:3002/remoteEntry.js
 
+  # No PRODUCT_GRAPHQL_URL/ORDER_GRAPHQL_URL here (or below): those were
+  # already dead — this `environment:` block only affects the RUNNING
+  # container, but the GraphQL URL is baked into the JS bundle at IMAGE
+  # BUILD time via config.js's APP_ENV-selected block (see
+  # frontend/shared-auth/src/config.js's "local" entry: graphqlUrl points
+  # directly at apollo-router on :4000 — no separate gateway needed).
   mfe-products:
     build:
       context: ./frontend
@@ -124,8 +164,6 @@ services:
     container_name: mfe-products
     ports:
       - "3001:3001"
-    environment:
-      PRODUCT_GRAPHQL_URL: http://localhost:8081/graphql
 
   mfe-orders:
     build:
@@ -134,9 +172,8 @@ services:
     container_name: mfe-orders
     ports:
       - "3002:3002"
-    environment:
-      ORDER_GRAPHQL_URL: http://localhost:8082/graphql
 
 volumes:
   pgdata:
   miniodata:
+  supergraph-schema:

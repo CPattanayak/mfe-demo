@@ -1,0 +1,19 @@
+# Input to `rover supergraph compose`. Uses static local SDL files
+# (schema: file:) instead of live introspection (schema: subgraph_url:) —
+# simpler and more reliable for this project: composition no longer
+# depends on both services being up and reachable at compose time, and
+# rover-compose/compose.sh no longer needs to poll/wait for them.
+#
+# Trade-off, stated plainly: product.graphql/order.graphql must be kept in
+# sync BY HAND with each service's real schema.graphqls — see the header
+# comment in each of those files.
+federation_version: 2
+subgraphs:
+  product:
+    routing_url: http://host.docker.internal:8081/graphql
+    schema:
+      file: product.graphql
+  order:
+    routing_url: http://host.docker.internal:8082/graphql
+    schema:
+      file: order.graphql
