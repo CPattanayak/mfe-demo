@@ -46,6 +46,10 @@ export default function OrderList() {
   const [sortField, setSortField] = useState(DEFAULT_SORT_FIELD);
   const [sortDirection, setSortDirection] = useState(DEFAULT_SORT_DIRECTION);
   // Requirement: clicking an item opens a modal with its details.
+  // The whole (lightweight) summary item is tracked, not just its id —
+  // OrderItemDetailsDialog renders name/quantity from this IMMEDIATELY
+  // and only queries the network for the fields this list never fetched
+  // (see the dialog's own comment for why).
   const [selectedItem, setSelectedItem] = useState(null);
 
   const handleSort = (field) => {
@@ -173,7 +177,7 @@ export default function OrderList() {
       )}
 
       <OrderItemDetailsDialog
-        item={selectedItem}
+        summary={selectedItem}
         open={Boolean(selectedItem)}
         onClose={() => setSelectedItem(null)}
       />

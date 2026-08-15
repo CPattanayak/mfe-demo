@@ -26,6 +26,9 @@ export default function OrderEdit() {
   const navigate = useNavigate();
   const [status, setStatus] = useState("PENDING");
   // Requirement: clicking an item opens a modal with its details.
+  // The whole (lightweight) summary item is tracked, not just its id —
+  // see OrderItemDetailsDialog's comment for why (renders name/quantity
+  // instantly, only queries the network for what's actually missing).
   const [selectedItem, setSelectedItem] = useState(null);
   // Viewing an order is fine for order:read alone — unlike Product/Order
   // Create, this page isn't fully blocked for readonly users. Only the
@@ -104,7 +107,7 @@ export default function OrderEdit() {
       </Stack>
 
       <OrderItemDetailsDialog
-        item={selectedItem}
+        summary={selectedItem}
         open={Boolean(selectedItem)}
         onClose={() => setSelectedItem(null)}
       />

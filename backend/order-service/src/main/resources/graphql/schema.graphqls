@@ -57,6 +57,14 @@ type Query {
     ): [Order!]!
     "Requires order:read"
     order(id: ID!): Order
+    """
+    Requires order:read. Fetches ONE order item's full details (including
+    the full nested Product breakdown) on demand. Exists so list views can
+    request a lightweight item shape (id, quantity, product name only) and
+    defer the full detail fetch until a specific item is actually opened —
+    see OrderItemDetailsDialog.jsx.
+    """
+    orderItem(id: ID!): OrderItem
 }
 
 type Mutation {
