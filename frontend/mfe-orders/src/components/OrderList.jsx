@@ -65,7 +65,14 @@ export default function OrderList() {
   const variables = { page, size: PAGE_SIZE, sortField, sortDirection };
   const { data, loading, error, refetch, networkStatus } = useQuery(ORDERS_QUERY, {
     variables,
-    pollInterval: 15_000,
+    // Paused (0 = disabled, per Apollo Client) while the item details
+    // modal is open — the list isn't visible/being looked at in that
+    // moment, so polling it is wasted work. This is also why you'd
+    // sometimes see a poll-triggered ORDERS_QUERY request land right
+    // next to a click-triggered ORDER_ITEM_DETAIL_QUERY one before this
+    // fix: two independent things coincidentally overlapping in time,
+    // not the click itself causing a list refresh.
+    pollInterval: selectedItem ? 0 : 15_000,
     notifyOnNetworkStatusChange: true,
   });
 

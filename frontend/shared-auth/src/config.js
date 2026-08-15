@@ -17,33 +17,49 @@
  * orderGraphqlUrl split.
  *
  * No separate gateway service: in local dev, this points directly at
- * Apollo Router's own port (:4000). In qa/production, it's the SAME
- * origin as the UI itself — cdn/nginx.conf reverse-proxies /graphql
- * straight to Apollo Router internally, so from the browser's
- * perspective the GraphQL endpoint and the UI are one and the same host.
+ * Apollo Router's own port (:4000). In qa/production, cdn/nginx.conf
+ * reverse-proxies BOTH /graphql (to Apollo Router) and /realms/** (to
+ * Keycloak) on the SAME origin as the UI itself — so graphqlUrl is a
+ * relative path (resolves against whatever host actually served the
+ * page, via HttpLink's normal relative-URI handling) and keycloakUrl
+ * reads window.location.origin at runtime rather than a hardcoded
+ * domain. This was a real bug earlier: hardcoding a separate
+ * "qa.example.com"/"qa-auth.example.com"-style absolute URL only works
+ * if that's really where the app is deployed — a relative/origin-based
+ * value works on ANY hostname QA or production actually ends up on,
+ * without needing to know or rebuild for that hostname in advance
+ * (useful since Kubernetes/Ingress hostnames are usually decided at
+ * deploy time, not at container-build time).
  *
  * Add a new environment by adding a key here and passing
  * APP_ENV=<name> when building (see cdn/Dockerfile, docker-compose*.yml).
  */
+const currentOrigin = typeof window !== "undefined" ? window.location.origin : undefined;
+
 const ENVIRONMENTS = {
   local: {
     name: "local",
     keycloakUrl: "http://localhost:8080",
     keycloakRealm: "microfrontend-demo",
     keycloakClientId: "web-app",
-    // Directly to Apollo Router — no gateway in front of it in local dev.
+    // Directly to Apollo Router — no gateway/nginx proxy in front of it
+    // in local dev, so this can't be relative (there's no single origin
+    // shared with a proxy to resolve it against).
     graphqlUrl: "/graphql",
   },
   qa: {
     name: "qa",
-    keycloakUrl: "https://qa.example.com",
+    // Falls back to a placeholder only if window isn't available (e.g.
+    // server-side tooling) — in the browser this is always the real
+    // deployed origin, whatever it actually is.
+    keycloakUrl: currentOrigin || "https://qa.example.com",
     keycloakRealm: "microfrontend-demo",
     keycloakClientId: "web-app",
     graphqlUrl: "/graphql",
   },
   production: {
     name: "production",
-    keycloakUrl: "https://app.example.com",
+    keycloakUrl: currentOrigin || "https://app.example.com",
     keycloakRealm: "microfrontend-demo",
     keycloakClientId: "web-app",
     graphqlUrl: "/graphql",

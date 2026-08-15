@@ -10,8 +10,21 @@ the prod-style deployment) — same services, but:
   — instead of a raw object-store bucket. This is what you'd point a real
   cloud CDN (CloudFront / Cloud CDN / Cloudflare) at if this QA env is
   externally reachable.
+- **Federated GraphQL.** `product-service`/`order-service` are real
+  Apollo Federation subgraphs (see `backend/*/config/FederationConfig.java`).
+  `apollo-router.yaml`'s initContainer runs `rover supergraph compose`
+  fresh on every pod start (static SDL files, not live introspection —
+  see `infra/apollo-router/`), and Apollo Router does the actual
+  federation query planning/parallel subgraph execution.
+- **Single entry point, no separate gateway.** `cdn`'s nginx (see
+  `cdn/nginx.conf`) reverse-proxies `/graphql` to Apollo Router and
+  `/realms/**` to Keycloak, alongside serving the UI itself — it's the
+  ONLY thing `ingress.yaml` routes to. A dedicated gateway app would just
+  be doing the identical path-routing nginx already does for free.
 - Single replica for stateful/backing services (Postgres, Keycloak) and
   the backend microservices — QA doesn't need prod-level redundancy.
+  Apollo Router and the CDN run 2 replicas each (stateless, cheap to
+  scale).
 - `letsencrypt-staging` cert issuer instead of `letsencrypt-prod`, to avoid
   burning your production rate limits while testing.
 - Keycloak keeps `--import-realm` enabled (prod turns it off after first
@@ -23,40 +36,89 @@ the prod-style deployment) — same services, but:
 kubectl apply -f k8s/qa/namespace.yaml
 kubectl apply -f k8s/qa/secrets.example.yaml   # copy, fill in real values first!
 
-# Populate the two ConfigMaps that reference repo files directly:
+# Populate the ConfigMaps that reference repo files directly (keeps this
+# repo's YAML DRY — no second copy of these files pasted into k8s/):
 kubectl create configmap postgres-init \
   --from-file=init.sql=infra/postgres/init.sql \
   -n mfe-demo-qa --dry-run=client -o yaml | kubectl apply -f -
 kubectl create configmap keycloak-realm \
   --from-file=realm-export.json=infra/keycloak/realm-export.json \
   -n mfe-demo-qa --dry-run=client -o yaml | kubectl apply -f -
+kubectl create configmap apollo-router-config \
+  --from-file=router.yaml=infra/apollo-router/router.yaml \
+  --from-file=supergraph-config.yaml=infra/apollo-router/supergraph-config.yaml \
+  --from-file=product.graphql=infra/apollo-router/product.graphql \
+  --from-file=order.graphql=infra/apollo-router/order.graphql \
+  -n mfe-demo-qa --dry-run=client -o yaml | kubectl apply -f -
 
 kubectl apply -f k8s/qa/postgres.yaml
 kubectl apply -f k8s/qa/keycloak.yaml
 kubectl apply -f k8s/qa/backend-deployments.yaml
+kubectl apply -f k8s/qa/apollo-router.yaml
 kubectl apply -f k8s/qa/cdn.yaml
 kubectl apply -f k8s/qa/ingress.yaml
 ```
 
-## Building the CDN image for QA
+## Before this actually works on a real hostname
+
+Two placeholders throughout this overlay (`qa.example.com`) need to
+become your real QA hostname, and BOTH sides need to agree or login will
+break with an "invalid redirect_uri" error:
+
+1. **`ingress.yaml`**'s `host:` field.
+2. **`keycloak.yaml`**'s `KC_HOSTNAME` env var — must exactly match #1,
+   or Keycloak generates redirect/token URLs pointing at its internal
+   cluster address instead of the public one.
+3. **`infra/keycloak/realm-export.json`**'s `web-app` client — add your
+   real hostname (`https://your-real-host/*`) to `redirectUris` and
+   `webOrigins`. The checked-in file only has `localhost` entries for
+   local dev; a fresh hostname needs to be added there too (or via the
+   Keycloak Admin Console directly, same as any other client config
+   change — see the README section on this in the repo root).
+
+Note what does NOT need per-hostname configuration anymore:
+`config.js`'s `keycloakUrl` and `graphqlUrl` for qa/production now
+resolve from `window.location.origin` / a relative path at runtime (see
+that file's comment) — so the same built `cdn` image works on ANY
+hostname you point it at, as long as #1–#3 above are consistent with
+each other.
+
+## Building images for QA
 
 ```bash
+# CDN — APP_ENV=qa is NOT optional. This is what selects config.js's
+# "qa" block at build time; get it wrong (or reuse a stale cached Docker
+# layer built with a different APP_ENV) and the bundle silently ships
+# with the WRONG environment's config baked in — no build error, just a
+# broken app once deployed. Verify what actually got baked in with:
+#   kubectl exec -it deploy/cdn -n mfe-demo-qa -- \
+#     grep -o 'graphqlUrl:"[^"]*"' /usr/share/nginx/html/*.js
 docker build -f cdn/Dockerfile \
-  --build-arg CDN_PUBLIC_PATH=https://qa.example.com/ \
-  --build-arg PRODUCTS_REMOTE_URL=https://qa.example.com/products/remoteEntry.js \
-  --build-arg ORDERS_REMOTE_URL=https://qa.example.com/orders/remoteEntry.js \
+  --build-arg APP_ENV=qa \
+  --build-arg CDN_PUBLIC_PATH=/ \
+  --build-arg PRODUCTS_REMOTE_URL=/products/remoteEntry.js \
+  --build-arg ORDERS_REMOTE_URL=/orders/remoteEntry.js \
   -t ghcr.io/your-org/mfe-cdn:qa .
 docker push ghcr.io/your-org/mfe-cdn:qa
+
+# rover-compose (the apollo-router.yaml initContainer image)
+docker build -f infra/apollo-router/rover-compose/Dockerfile \
+  -t ghcr.io/your-org/rover-compose:qa infra/apollo-router/rover-compose
+docker push ghcr.io/your-org/rover-compose:qa
+
+# product-service / order-service — same as k8s/README.md's prod build,
+# just tagged :qa instead.
 ```
 
-Re-run this (with new build args) whenever the QA hostname changes, since
-the remote URLs and asset public path are baked in at build time — the
-same way a real CI pipeline would produce a QA-specific frontend build.
+Unlike earlier versions of this setup, the CDN build args no longer need
+to embed the real hostname (`CDN_PUBLIC_PATH`/`PRODUCTS_REMOTE_URL`/
+`ORDERS_REMOTE_URL` are relative paths, resolved against whatever host
+actually serves the page) — only `APP_ENV` needs to be right.
 
 ## Local equivalent
 
 `docker-compose.qa.yml` at the repo root gives you the same topology
-(CDN edge instead of MinIO) without a cluster:
+(federation + CDN edge, no Kubernetes) without a cluster:
 
 ```bash
 docker compose -f docker-compose.qa.yml up -d --build
