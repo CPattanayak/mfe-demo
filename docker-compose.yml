@@ -105,16 +105,41 @@ services:
     ports:
       - "8082:8082"
 
+  # Extends product-service's Product entity with an `inventory` field —
+  # the canonical Apollo Federation "subgraph attaching a field to an
+  # entity it doesn't own" pattern. See
+  # backend/inventory-service/.../ProductInventoryResolver.java and
+  # infra/apollo-router/inventory.graphql.
+  inventory-service:
+    build:
+      context: .
+      dockerfile: backend/inventory-service/Dockerfile
+    container_name: inventory-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    environment:
+      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/appdb?schema=inventory_schema
+      SPRING_R2DBC_USERNAME: inventory_service
+      SPRING_R2DBC_PASSWORD: inventory_service_pwd
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/microfrontend-demo
+      SERVER_PORT: 8083
+    ports:
+      - "8083:8083"
+
   # ---------------------------------------------------------------------
-  # Federation layer: rover composes both subgraphs' STATIC SDL files
-  # (product.graphql/order.graphql, kept in sync by hand with each
-  # service's real schema.graphqls) into ONE supergraph.graphql — an
-  # offline step, NOT done by Router itself. Apollo Router then loads
-  # that file and does the actual federation query planning/parallel
-  # subgraph execution at request time. See infra/apollo-router/ for all
-  # the config files. File-based composition means this doesn't need
-  # product-service/order-service to be running at all to compose — it
-  # runs immediately, in parallel with them starting up.
+  # Federation layer: rover composes all three subgraphs' STATIC SDL
+  # files (product.graphql/order.graphql/inventory.graphql, kept in sync
+  # by hand with each service's real schema.graphqls) into ONE
+  # supergraph.graphql — an offline step, NOT done by Router itself.
+  # Apollo Router then loads that file and does the actual federation
+  # query planning/parallel subgraph execution at request time. See
+  # infra/apollo-router/ for all the config files. File-based composition
+  # means this doesn't need product-service/order-service/
+  # inventory-service to be running at all to compose — it runs
+  # immediately, in parallel with them starting up.
   # ---------------------------------------------------------------------
   supergraph-compose:
     build:
@@ -124,6 +149,7 @@ services:
       - ./infra/apollo-router/supergraph-config.yaml:/workspace/supergraph-config.yaml:ro
       - ./infra/apollo-router/product.graphql:/workspace/product.graphql:ro
       - ./infra/apollo-router/order.graphql:/workspace/order.graphql:ro
+      - ./infra/apollo-router/inventory.graphql:/workspace/inventory.graphql:ro
       - supergraph-schema:/output
 
   apollo-router:

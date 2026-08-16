@@ -125,6 +125,27 @@ services:
 #    ports:
 #      - "8082:8082"
 #    restart: unless-stopped
+#
+#  # Extends product-service's Product entity with an `inventory` field —
+#  # see backend/inventory-service/.../ProductInventoryResolver.java and
+#  # infra/apollo-router/inventory.graphql.
+#  inventory-service:
+#    build:
+#      context: .
+#      dockerfile: backend/inventory-service/Dockerfile
+#    container_name: inventory-service-qa
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
+#    environment:
+#      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/appdb?schema=inventory_schema
+#      SPRING_R2DBC_USERNAME: inventory_service
+#      SPRING_R2DBC_PASSWORD: inventory_service_pwd
+#      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/microfrontend-demo
+#      SERVER_PORT: 8083
+#    ports:
+#      - "8083:8083"
+#    restart: unless-stopped
 
   # ---------------------------------------------------------------------
   # Federation layer — same mechanism as local docker-compose.yml, see
@@ -138,6 +159,7 @@ services:
       - ./infra/apollo-router/supergraph-config.yaml:/workspace/supergraph-config.yaml:ro
       - ./infra/apollo-router/product.graphql:/workspace/product.graphql:ro
       - ./infra/apollo-router/order.graphql:/workspace/order.graphql:ro
+      - ./infra/apollo-router/inventory.graphql:/workspace/inventory.graphql:ro
       - supergraph-schema-qa:/output
 
   apollo-router:

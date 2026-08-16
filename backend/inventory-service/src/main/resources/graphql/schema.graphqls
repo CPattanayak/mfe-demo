@@ -1,0 +1,87 @@
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key", "@external"])
+
+"""
+The actual data this subgraph owns. Not a federation entity itself (no
+@key) — nothing else needs to reference an Inventory row directly, it's
+only ever reached via Product.inventory below.
+"""
+type Inventory {
+    id: ID!
+    productId: ID!
+    quantityAvailable: Int!
+    quantityReserved: Int!
+    warehouseLocation: String
+    lastRestockedAt: String
+}
+
+"""
+This is the canonical Apollo Federation "extend an entity you don't own"
+pattern: product-service owns Product (it has the @key and the real
+Query/Mutation fields for it — see product-service's schema.graphqls).
+This subgraph adds ONE field to that same entity without knowing or
+caring about any of Product's other fields. Router resolves `id` from
+product-service first, then calls back into THIS subgraph's entity
+resolver (see ProductInventoryResolver.java) with that id to fill in
+`inventory` — see that class's javadoc for why this is a genuinely
+different execution shape (Fetch-then-Flatten) than the parallel
+independent-root-field example in FederationDemo.jsx.
+
+Deliberately NOT "extend type Product" — Federation 2 (declared via the
+@link above) drops the `extend` keyword requirement entirely; a plain
+`type` declaration + @key is the correct Federation 2 syntax for
+contributing fields to an entity owned elsewhere. `extend type` here
+actually BREAKS startup: federation-jvm's schema parser is plain
+GraphQL-Java underneath, which has no concept of federation-style
+extension — "extend type X" with no local base `type X` anywhere in this
+subgraph's own schema is just invalid standard GraphQL to it, throwing
+"The extension 'Product' type is missing its base underlying type" at
+startup. Learned this the hard way — see git history for two failed
+attempts before this one.
+
+A list, not a single Inventory: a product can have stock in MULTIPLE
+warehouses at once (see infra/postgres/init.sql — the table's primary
+key is its own generated id, not product_id, precisely so more than one
+row per product is possible). ProductInventoryResolver.java's
+@BatchMapping resolves this for many products in ONE query, not one
+query per product — the actual DataLoader-equivalent fix, matching
+order-service's ProductBatchLoader pattern.
+"""
+type Product @key(fields: "id") {
+    id: ID! @external
+    inventory: [Inventory!]!
+}
+
+type Query {
+    "Requires product:read. Direct lookup for one product's stock across all its warehouses, bypassing the Product entity extension."
+    inventoryForProduct(productId: ID!): [Inventory!]!
+    """
+    Requires product:read. Independent of any specific product — this is
+    the query FederationDemo.jsx's DASHBOARD_QUERY adds as a genuinely
+    PARALLEL third branch alongside products/orders, since it doesn't
+    depend on knowing any product's id in advance.
+    """
+    lowStockInventory(threshold: Int = 10): [Inventory!]!
+}
+
+input CreateInventoryInput {
+    productId: ID!
+    quantityAvailable: Int!
+    quantityReserved: Int = 0
+    warehouseLocation: String!
+}
+
+input UpdateInventoryInput {
+    quantityAvailable: Int
+    quantityReserved: Int
+    warehouseLocation: String
+}
+
+type Mutation {
+    "Requires product:write — same role that gates creating/editing products themselves, since inventory management lives on the product detail page. Adds a NEW warehouse record for a product (a product can have several — see Product.inventory above)."
+    createInventory(input: CreateInventoryInput!): Inventory!
+    "Requires product:write. Updates an EXISTING warehouse's stock levels."
+    updateInventory(id: ID!, input: UpdateInventoryInput!): Inventory!
+    "Requires product:write. Removes a warehouse's stock record entirely."
+    deleteInventory(id: ID!): Boolean!
+}

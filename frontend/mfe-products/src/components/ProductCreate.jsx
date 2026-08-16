@@ -13,7 +13,13 @@ export default function ProductCreate() {
   const navigate = useNavigate();
   const [createProduct, { loading, error }] = useMutation(CREATE_PRODUCT, {
     refetchQueries: [{ query: PRODUCTS_QUERY, variables: { page: 0, size: 20 } }],
-    onCompleted: () => navigate("/products"),
+    // Was navigate("/products") — but inventory can't be attached to a
+    // product until it actually exists (needs a real id), so there's no
+    // sensible way to manage inventory from THIS screen. Landing
+    // straight on the new product's edit page instead means inventory
+    // management (see InventorySection.jsx) is immediately available,
+    // rather than requiring a second manual navigation back in.
+    onCompleted: (data) => navigate(`/products/${data.createProduct.id}/edit`),
   });
 
   // The nav menu already hides "Create" for users without product:write

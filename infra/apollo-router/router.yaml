@@ -34,3 +34,11 @@ sandbox:
 
 homepage:
   enabled: false
+
+# LOCAL DEBUGGING ONLY — unredacts the real subgraph error text (stack
+# trace details, exception messages) into the response the CLIENT sees,
+# instead of Router's default "Subgraph errors redacted". Remove this (or
+# scope it to specific subgraphs only) before anything beyond local dev —
+# it can leak internal implementation details to callers.
+include_subgraph_errors:
+  all: true

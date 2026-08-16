@@ -5,6 +5,7 @@ import { authClient } from "@demo/shared-auth";
 import { PRODUCT_QUERY, UPDATE_PRODUCT, PRODUCTS_QUERY } from "../graphql/productQueries";
 import ProductForm from "./ProductForm";
 import FormSkeleton from "./FormSkeleton";
+import InventorySection from "./InventorySection";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Link from "@mui/material/Link";
@@ -70,6 +71,7 @@ export default function ProductEdit() {
           })
         }
       />
+      <InventorySection inventory={data.product.inventory} productId={id} />
     </Box>
   );
 }

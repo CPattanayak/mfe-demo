@@ -9,6 +9,7 @@ WORKDIR /workspace
 COPY pom.xml .
 COPY backend/product-service/pom.xml backend/product-service/pom.xml
 COPY backend/order-service/pom.xml backend/order-service/pom.xml
+COPY backend/inventory-service/pom.xml backend/inventory-service/pom.xml
 RUN mvn -B -q -pl backend/order-service -am dependency:go-offline
 
 COPY backend/order-service/src backend/order-service/src

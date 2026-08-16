@@ -49,6 +49,7 @@ kubectl create configmap apollo-router-config \
   --from-file=supergraph-config.yaml=infra/apollo-router/supergraph-config.yaml \
   --from-file=product.graphql=infra/apollo-router/product.graphql \
   --from-file=order.graphql=infra/apollo-router/order.graphql \
+  --from-file=inventory.graphql=infra/apollo-router/inventory.graphql \
   -n mfe-demo-qa --dry-run=client -o yaml | kubectl apply -f -
 
 kubectl apply -f k8s/qa/postgres.yaml
@@ -106,8 +107,8 @@ docker build -f infra/apollo-router/rover-compose/Dockerfile \
   -t ghcr.io/your-org/rover-compose:qa infra/apollo-router/rover-compose
 docker push ghcr.io/your-org/rover-compose:qa
 
-# product-service / order-service — same as k8s/README.md's prod build,
-# just tagged :qa instead.
+# product-service / order-service / inventory-service — same as
+# k8s/README.md's prod build, just tagged :qa instead.
 ```
 
 Unlike earlier versions of this setup, the CDN build args no longer need

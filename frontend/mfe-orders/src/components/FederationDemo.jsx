@@ -14,14 +14,15 @@ import Alert from "@mui/material/Alert";
 
 /**
  * Concrete, runnable proof of the federation requirement: ONE query
- * (DASHBOARD_QUERY) fetching `products` (owned by product-service) and
- * `orders` (owned by order-service) in a single round trip to Apollo
- * Router, which resolves both subgraphs in parallel and merges the
- * result — no separate gateway service in between.
+ * (DASHBOARD_QUERY) fetching `products` (product-service), `orders`
+ * (order-service), and `lowStockInventory` (inventory-service) in a
+ * single round trip to Apollo Router, which resolves all three subgraphs
+ * in parallel and merges the result — no separate gateway service in
+ * between.
  *
  * Open this page's network tab: there is exactly ONE request to
- * /graphql, not two — Router did the fan-out/merge, the browser never
- * knew two separate services were involved.
+ * /graphql, not three — Router did the fan-out/merge, the browser never
+ * knew three separate services were involved.
  */
 export default function FederationDemo() {
   const { data, loading, error } = useQuery(DASHBOARD_QUERY);
@@ -35,12 +36,12 @@ export default function FederationDemo() {
         Federation demo
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        One query, two subgraphs, resolved in parallel by Apollo Router —
+        One query, three subgraphs, resolved in parallel by Apollo Router —
         see DASHBOARD_QUERY in graphql/dashboardQuery.js.
       </Typography>
 
       <Grid container spacing={2}>
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={4}>
           <Paper sx={{ p: 2 }}>
             <Typography variant="subtitle1" sx={{ mb: 1 }}>
               Products (product-service)
@@ -58,7 +59,7 @@ export default function FederationDemo() {
           </Paper>
         </Grid>
 
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={4}>
           <Paper sx={{ p: 2 }}>
             <Typography variant="subtitle1" sx={{ mb: 1 }}>
               Orders (order-service)
@@ -68,6 +69,30 @@ export default function FederationDemo() {
                 <ListItem key={o.id} disableGutters>
                   <ListItemText primary={o.customerId} />
                   <Chip label={o.status} size="small" color="primary" variant="outlined" />
+                </ListItem>
+              ))}
+            </List>
+          </Paper>
+        </Grid>
+
+        <Grid item xs={12} sm={4}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="subtitle1" sx={{ mb: 1 }}>
+              Low stock (inventory-service)
+            </Typography>
+            <List dense>
+              {data.lowStockInventory.length === 0 && (
+                <Typography variant="body2" color="text.secondary">
+                  Nothing below the threshold.
+                </Typography>
+              )}
+              {data.lowStockInventory.map((inv) => (
+                <ListItem key={inv.id} disableGutters>
+                  <ListItemText
+                    primary={`${inv.quantityAvailable} available`}
+                    secondary={inv.warehouseLocation}
+                  />
+                  <Chip label="Low" size="small" color="warning" variant="outlined" />
                 </ListItem>
               ))}
             </List>

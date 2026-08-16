@@ -17,11 +17,13 @@ data:
   #     --from-file=supergraph-config.yaml=infra/apollo-router/supergraph-config.yaml \
   #     --from-file=product.graphql=infra/apollo-router/product.graphql \
   #     --from-file=order.graphql=infra/apollo-router/order.graphql \
+  #     --from-file=inventory.graphql=infra/apollo-router/inventory.graphql \
   #     -n mfe-demo-qa --dry-run=client -o yaml | kubectl apply -f -
   router.yaml: "placeholder"
   supergraph-config.yaml: "placeholder"
   product.graphql: "placeholder"
   order.graphql: "placeholder"
+  inventory.graphql: "placeholder"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -44,6 +46,7 @@ spec:
             - { name: router-config, mountPath: /workspace/supergraph-config.yaml, subPath: supergraph-config.yaml }
             - { name: router-config, mountPath: /workspace/product.graphql, subPath: product.graphql }
             - { name: router-config, mountPath: /workspace/order.graphql, subPath: order.graphql }
+            - { name: router-config, mountPath: /workspace/inventory.graphql, subPath: inventory.graphql }
             - { name: supergraph-output, mountPath: /output }
       containers:
         - name: apollo-router

@@ -21,6 +21,25 @@ export const PRODUCT_QUERY = gql`
       description
       priceCents
       currency
+      # Owned by inventory-service, not product-service — this ONE query
+      # selecting a field from a DIFFERENT subgraph than the rest is what
+      # triggers Router's entity extension resolution: Fetch
+      # product-service for everything above, THEN Flatten to
+      # inventory-service (using the id product-service just returned) for
+      # this. See ProductInventoryResolver.java's javadoc for why this
+      # specific shape is sequential, not parallel.
+      #
+      # A LIST: a product can have stock in multiple warehouses. Resolved
+      # for potentially many products at once via @BatchMapping (ONE query,
+      # not one per product) — see that class's javadoc.
+      inventory {
+        id
+        productId
+        quantityAvailable
+        quantityReserved
+        warehouseLocation
+        lastRestockedAt
+      }
     }
   }
 `;
