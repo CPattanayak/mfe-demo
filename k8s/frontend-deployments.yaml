@@ -1,3 +1,17 @@
+# =============================================================================
+# SUPERSEDED — DO NOT APPLY. Kept for reference/rollback only.
+#
+# These three separate Deployments (shell/mfe-products/mfe-orders, each on
+# its own path) predate the federation/gateway architecture and are
+# structurally incompatible with it: cdn.yaml's nginx now needs ONE
+# static origin to catch-all route everything else to (see
+# apollo-router.yaml's whole point — a single gateway needs a single
+# thing to hand off to), which three separate Deployments on three
+# separate paths can't provide.
+#
+# Use cdn.yaml instead — it builds all three bundles into ONE image/
+# origin, the same way QA already does (k8s/qa/cdn.yaml).
+# =============================================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:

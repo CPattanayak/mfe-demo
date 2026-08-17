@@ -6,6 +6,7 @@ import { PRODUCT_QUERY, UPDATE_PRODUCT, PRODUCTS_QUERY } from "../graphql/produc
 import ProductForm from "./ProductForm";
 import FormSkeleton from "./FormSkeleton";
 import InventorySection from "./InventorySection";
+import RatingSection from "./RatingSection";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Link from "@mui/material/Link";
@@ -72,6 +73,7 @@ export default function ProductEdit() {
         }
       />
       <InventorySection inventory={data.product.inventory} productId={id} />
+      <RatingSection rating={data.product.rating} />
     </Box>
   );
 }

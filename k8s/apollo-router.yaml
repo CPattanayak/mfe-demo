@@ -1,14 +1,15 @@
-# Federation layer for QA. An initContainer runs `rover supergraph
-# compose` (same static-SDL-file approach as docker-compose.qa.yml — see
-# infra/apollo-router/) into a shared emptyDir volume before the main
-# apollo-router container starts. This recomposes fresh on every pod
-# (re)start rather than relying on a separate one-off Job that could go
-# stale relative to whatever image versions are actually running.
+# Federation layer for production. An initContainer runs `rover
+# supergraph compose` (same static-SDL-file approach as
+# docker-compose.qa.yml — see infra/apollo-router/) into a shared
+# emptyDir volume before the main apollo-router container starts. This
+# recomposes fresh on every pod (re)start rather than relying on a
+# separate one-off Job that could go stale relative to whatever image
+# versions are actually running.
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: apollo-router-config
-  namespace: mfe-demo-qa
+  namespace: mfe-demo
 data:
   # Populate via (keeps this file DRY and always in sync with the real
   # repo files, rather than a second copy pasted into this YAML):
@@ -19,7 +20,7 @@ data:
   #     --from-file=order.graphql=infra/apollo-router/order.graphql \
   #     --from-file=inventory.graphql=infra/apollo-router/inventory.graphql \
   #     --from-file=rating.graphql=infra/apollo-router/rating.graphql \
-  #     -n mfe-demo-qa --dry-run=client -o yaml | kubectl apply -f -
+  #     -n mfe-demo --dry-run=client -o yaml | kubectl apply -f -
   router.yaml: "placeholder"
   supergraph-config.yaml: "placeholder"
   product.graphql: "placeholder"
@@ -31,7 +32,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: apollo-router
-  namespace: mfe-demo-qa
+  namespace: mfe-demo
 spec:
   replicas: 2
   selector:
@@ -43,7 +44,7 @@ spec:
       initContainers:
         - name: supergraph-compose
           # Built from infra/apollo-router/rover-compose/Dockerfile
-          image: ghcr.io/your-org/rover-compose:qa
+          image: ghcr.io/your-org/rover-compose:latest
           volumeMounts:
             - { name: router-config, mountPath: /workspace/supergraph-config.yaml, subPath: supergraph-config.yaml }
             - { name: router-config, mountPath: /workspace/product.graphql, subPath: product.graphql }
@@ -72,8 +73,8 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 10
           resources:
-            requests: { cpu: 100m, memory: 128Mi }
-            limits: { cpu: 500m, memory: 256Mi }
+            requests: { cpu: 200m, memory: 256Mi }
+            limits: { cpu: "1", memory: 512Mi }
       volumes:
         - name: router-config
           configMap: { name: apollo-router-config }
@@ -84,7 +85,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: apollo-router
-  namespace: mfe-demo-qa
+  namespace: mfe-demo
 spec:
   selector: { app: apollo-router }
   ports: [{ port: 4000, targetPort: 4000 }]

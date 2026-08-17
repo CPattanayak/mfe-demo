@@ -4,6 +4,7 @@
 CREATE SCHEMA IF NOT EXISTS product_schema;
 CREATE SCHEMA IF NOT EXISTS order_schema;
 CREATE SCHEMA IF NOT EXISTS inventory_schema;
+CREATE SCHEMA IF NOT EXISTS rating_schema;
 
 -- ---------------------------------------------------------------------
 -- Roles: least-privilege per microservice (both point at the same DB)
@@ -19,12 +20,16 @@ BEGIN
   IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'inventory_service') THEN
     CREATE ROLE inventory_service LOGIN PASSWORD 'inventory_service_pwd';
   END IF;
+  IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'rating_service') THEN
+    CREATE ROLE rating_service LOGIN PASSWORD 'rating_service_pwd';
+  END IF;
 END
 $$;
 
 GRANT USAGE ON SCHEMA product_schema   TO product_service;
 GRANT USAGE ON SCHEMA order_schema     TO order_service;
 GRANT USAGE ON SCHEMA inventory_schema TO inventory_service;
+GRANT USAGE ON SCHEMA rating_schema    TO rating_service;
 
 ALTER DEFAULT PRIVILEGES IN SCHEMA product_schema
   GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO product_service;
@@ -32,6 +37,8 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA order_schema
   GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO order_service;
 ALTER DEFAULT PRIVILEGES IN SCHEMA inventory_schema
   GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO inventory_service;
+ALTER DEFAULT PRIVILEGES IN SCHEMA rating_schema
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO rating_service;
 
 -- order_service also needs read access to product_schema.products
 -- for validation / fallback joins (in general prefer calling the
@@ -130,3 +137,32 @@ UNION ALL
 SELECT id, 45, 2, 'WAREHOUSE-A' FROM product_schema.products WHERE sku = 'SKU-002'
 UNION ALL
 SELECT id, 8, 1, 'WAREHOUSE-B' FROM product_schema.products WHERE sku = 'SKU-003';
+
+-- ---------------------------------------------------------------------
+-- rating_schema
+--
+-- Deliberately GENUINELY 1:1 with Product — contrast this with
+-- inventory_schema above (a real 1:MANY relationship: multiple
+-- warehouse rows per product). Here, product_id itself IS the primary
+-- key — the database structurally enforces at most one rating row per
+-- product, the same way a foreign key with a UNIQUE constraint would.
+-- See backend/rating-service's schema.graphqls: Product.rating returns
+-- a single nullable ProductRating, not a list.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS rating_schema.product_rating (
+    product_id      UUID PRIMARY KEY, -- logical FK to product_schema.products.id, same cross-schema convention as inventory_schema.inventory.product_id
+    average_rating  NUMERIC(2, 1) NOT NULL CHECK (average_rating >= 0 AND average_rating <= 5),
+    review_count    INT NOT NULL DEFAULT 0 CHECK (review_count >= 0),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+GRANT USAGE ON SCHEMA product_schema TO rating_service;
+GRANT SELECT ON product_schema.products TO rating_service;
+
+INSERT INTO rating_schema.product_rating (product_id, average_rating, review_count)
+SELECT id, 4.5, 128 FROM product_schema.products WHERE sku = 'SKU-001'
+UNION ALL
+SELECT id, 4.2, 64 FROM product_schema.products WHERE sku = 'SKU-002'
+UNION ALL
+SELECT id, 3.8, 12 FROM product_schema.products WHERE sku = 'SKU-003'
+ON CONFLICT (product_id) DO NOTHING;

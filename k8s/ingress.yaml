@@ -6,45 +6,29 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     cert-manager.io/cluster-issuer: letsencrypt-prod
+    # If a cloud CDN sits in front of this Ingress (recommended for a
+    # public-facing production env), it will typically honor the
+    # Cache-Control headers already set by cdn/nginx.conf. Nothing extra
+    # is required here beyond making sure the CDN is configured to
+    # respect origin cache headers rather than overriding them.
 spec:
   tls:
     - hosts:
         - app.example.com
-        - api.example.com
-        - auth.example.com
-        - assets.example.com
       secretName: mfe-demo-tls
   rules:
+    # Single host, single backend: cdn's nginx (see cdn/nginx.conf)
+    # already does all the internal routing — GraphQL to apollo-router,
+    # Keycloak auth to keycloak, everything else as static UI assets.
+    # The Ingress doesn't need to know any of that; it just needs to get
+    # every request to cdn. (This file used to route /, /products,
+    # /orders, auth.example.com, api.example.com, and
+    # assets.example.com to five separate backends directly — that
+    # predates the reverse-proxy design and is no longer correct; see
+    # frontend-deployments.yaml and minio.yaml's own superseded notices.)
     - host: app.example.com
       http:
         paths:
           - path: /
             pathType: Prefix
-            backend: { service: { name: shell, port: { number: 3000 } } }
-          - path: /products
-            pathType: Prefix
-            backend: { service: { name: mfe-products, port: { number: 3001 } } }
-          - path: /orders
-            pathType: Prefix
-            backend: { service: { name: mfe-orders, port: { number: 3002 } } }
-    - host: auth.example.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend: { service: { name: keycloak, port: { number: 8080 } } }
-    - host: api.example.com
-      http:
-        paths:
-          - path: /product
-            pathType: Prefix
-            backend: { service: { name: product-service, port: { number: 8081 } } }
-          - path: /order
-            pathType: Prefix
-            backend: { service: { name: order-service, port: { number: 8082 } } }
-    - host: assets.example.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend: { service: { name: minio, port: { number: 9000 } } }
+            backend: { service: { name: cdn, port: { number: 8090 } } }

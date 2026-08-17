@@ -129,17 +129,40 @@ services:
     ports:
       - "8083:8083"
 
+  # Extends product-service's Product entity with a `rating` field —
+  # same pattern as inventory-service, GENUINELY 1:1 instead of 1:many
+  # (contrast Product.inventory: [Inventory!]! vs Product.rating:
+  # ProductRating). See backend/rating-service/.../ProductRatingResolver.java
+  # and infra/apollo-router/rating.graphql.
+  rating-service:
+    build:
+      context: .
+      dockerfile: backend/rating-service/Dockerfile
+    container_name: rating-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    environment:
+      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/appdb?schema=rating_schema
+      SPRING_R2DBC_USERNAME: rating_service
+      SPRING_R2DBC_PASSWORD: rating_service_pwd
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/microfrontend-demo
+      SERVER_PORT: 8084
+    ports:
+      - "8084:8084"
+
   # ---------------------------------------------------------------------
-  # Federation layer: rover composes all three subgraphs' STATIC SDL
-  # files (product.graphql/order.graphql/inventory.graphql, kept in sync
-  # by hand with each service's real schema.graphqls) into ONE
+  # Federation layer: rover composes all FOUR subgraphs' STATIC SDL files
+  # (product.graphql/order.graphql/inventory.graphql/rating.graphql, kept
+  # in sync by hand with each service's real schema.graphqls) into ONE
   # supergraph.graphql — an offline step, NOT done by Router itself.
   # Apollo Router then loads that file and does the actual federation
   # query planning/parallel subgraph execution at request time. See
   # infra/apollo-router/ for all the config files. File-based composition
-  # means this doesn't need product-service/order-service/
-  # inventory-service to be running at all to compose — it runs
-  # immediately, in parallel with them starting up.
+  # means this doesn't need any of the four services to be running at all
+  # to compose — it runs immediately, in parallel with them starting up.
   # ---------------------------------------------------------------------
   supergraph-compose:
     build:
@@ -150,6 +173,7 @@ services:
       - ./infra/apollo-router/product.graphql:/workspace/product.graphql:ro
       - ./infra/apollo-router/order.graphql:/workspace/order.graphql:ro
       - ./infra/apollo-router/inventory.graphql:/workspace/inventory.graphql:ro
+      - ./infra/apollo-router/rating.graphql:/workspace/rating.graphql:ro
       - supergraph-schema:/output
 
   apollo-router:

@@ -12,6 +12,7 @@ COPY pom.xml .
 COPY backend/product-service/pom.xml backend/product-service/pom.xml
 COPY backend/order-service/pom.xml backend/order-service/pom.xml
 COPY backend/inventory-service/pom.xml backend/inventory-service/pom.xml
+COPY backend/rating-service/pom.xml backend/rating-service/pom.xml
 RUN mvn -B -q -pl backend/product-service -am dependency:go-offline
 
 # Now bring in the actual sources and build just this module (+ its

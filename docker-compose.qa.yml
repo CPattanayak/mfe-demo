@@ -1,4 +1,4 @@
-version: "3.8"
+#version: "3.8"
 
 # QA topology. Differences from the local docker-compose.yml:
 #  - No MinIO: static assets are served by a CDN-style nginx edge (./cdn)
@@ -87,65 +87,7 @@ services:
       - "8080:8080"
     restart: unless-stopped
 
-#  product-service:
-#    build:
-#      context: .
-#      dockerfile: backend/product-service/Dockerfile
-#    container_name: product-service-qa
-#    depends_on:
-#      postgres:
-#        condition: service_healthy
-#    environment:
-#      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/appdb?schema=product_schema
-#      SPRING_R2DBC_USERNAME: product_service
-#      SPRING_R2DBC_PASSWORD: product_service_pwd
-#      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/microfrontend-demo
-#      SERVER_PORT: 8081
-#    ports:
-#      - "8081:8081"
-#    restart: unless-stopped
-#
-#  order-service:
-#    build:
-#      context: .
-#      dockerfile: backend/order-service/Dockerfile
-#    container_name: order-service-qa
-#    depends_on:
-#      postgres:
-#        condition: service_healthy
-#      product-service:
-#        condition: service_started
-#    environment:
-#      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/appdb?schema=order_schema
-#      SPRING_R2DBC_USERNAME: order_service
-#      SPRING_R2DBC_PASSWORD: order_service_pwd
-#      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/microfrontend-demo
-#      PRODUCT_SERVICE_GRAPHQL_URL: http://product-service:8081/graphql
-#      SERVER_PORT: 8082
-#    ports:
-#      - "8082:8082"
-#    restart: unless-stopped
-#
-#  # Extends product-service's Product entity with an `inventory` field —
-#  # see backend/inventory-service/.../ProductInventoryResolver.java and
-#  # infra/apollo-router/inventory.graphql.
-#  inventory-service:
-#    build:
-#      context: .
-#      dockerfile: backend/inventory-service/Dockerfile
-#    container_name: inventory-service-qa
-#    depends_on:
-#      postgres:
-#        condition: service_healthy
-#    environment:
-#      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/appdb?schema=inventory_schema
-#      SPRING_R2DBC_USERNAME: inventory_service
-#      SPRING_R2DBC_PASSWORD: inventory_service_pwd
-#      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/microfrontend-demo
-#      SERVER_PORT: 8083
-#    ports:
-#      - "8083:8083"
-#    restart: unless-stopped
+
 
   # ---------------------------------------------------------------------
   # Federation layer — same mechanism as local docker-compose.yml, see
@@ -160,6 +102,7 @@ services:
       - ./infra/apollo-router/product.graphql:/workspace/product.graphql:ro
       - ./infra/apollo-router/order.graphql:/workspace/order.graphql:ro
       - ./infra/apollo-router/inventory.graphql:/workspace/inventory.graphql:ro
+      - ./infra/apollo-router/rating.graphql:/workspace/rating.graphql:ro
       - supergraph-schema-qa:/output
 
   apollo-router:

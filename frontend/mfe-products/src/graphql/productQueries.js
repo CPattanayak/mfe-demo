@@ -21,17 +21,10 @@ export const PRODUCT_QUERY = gql`
       description
       priceCents
       currency
-      # Owned by inventory-service, not product-service — this ONE query
-      # selecting a field from a DIFFERENT subgraph than the rest is what
-      # triggers Router's entity extension resolution: Fetch
-      # product-service for everything above, THEN Flatten to
-      # inventory-service (using the id product-service just returned) for
-      # this. See ProductInventoryResolver.java's javadoc for why this
-      # specific shape is sequential, not parallel.
-      #
-      # A LIST: a product can have stock in multiple warehouses. Resolved
-      # for potentially many products at once via @BatchMapping (ONE query,
-      # not one per product) — see that class's javadoc.
+      # A list, from inventory-service — a product can be stocked in
+      # multiple warehouses. Resolved for potentially many products at
+      # once via @BatchMapping (ONE query, not one per product) — see
+      # ProductInventoryResolver.java's javadoc.
       inventory {
         id
         productId
@@ -39,6 +32,15 @@ export const PRODUCT_QUERY = gql`
         quantityReserved
         warehouseLocation
         lastRestockedAt
+      }
+      # A SINGLE nullable object, from rating-service — genuinely 1:1,
+      # deliberately different in shape from inventory above. Both are
+      # federated in from services product-service knows nothing about,
+      # in this SAME one request.
+      rating {
+        averageRating
+        reviewCount
+        updatedAt
       }
     }
   }

@@ -4,26 +4,30 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8e81680c-4bf7-49fb-91d1-5c042cffaff5" name="Changes" comment="">
+    <list default="true" id="7f84d32d-eaab-48d5-8a02-67f7ba01f848" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/inventory-service/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/backend/inventory-service/Dockerfile" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/order-service/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/backend/order-service/Dockerfile" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/product-service/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/backend/product-service/Dockerfile" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docker-compose.qa.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.qa.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/components/FederationDemo.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/components/FederationDemo.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/graphql/dashboardQuery.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/graphql/dashboardQuery.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-products/src/components/ProductCreate.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-products/src/components/ProductCreate.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/mfe-products/src/components/ProductEdit.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-products/src/components/ProductEdit.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/mfe-products/src/graphql/productQueries.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-products/src/graphql/productQueries.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/infra/apollo-router/router.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/infra/apollo-router/router.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/infra/apollo-router/supergraph-config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/infra/apollo-router/supergraph-config.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/infra/postgres/init.sql" beforeDir="false" afterPath="$PROJECT_DIR$/infra/postgres/init.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/k8s/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/k8s/backend-deployments.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/backend-deployments.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/k8s/frontend-deployments.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/frontend-deployments.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/k8s/ingress.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/ingress.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/k8s/keycloak.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/keycloak.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/k8s/minio.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/minio.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/k8s/qa/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/qa/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/k8s/qa/apollo-router.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/qa/apollo-router.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/k8s/qa/backend-deployments.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/qa/backend-deployments.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/k8s/qa/secrets.example.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/qa/secrets.example.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/k8s/secrets.example.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/secrets.example.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -38,7 +42,7 @@
   "customColor": "",
   "associatedIndex": 1
 }]]></component>
-  <component name="ProjectId" id="3I0776HQqPCx8aPRnRlSaR9co8Y" />
+  <component name="ProjectId" id="3I1dydbrF8boxgX58YSUgY20ypS" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -48,11 +52,11 @@
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "Spring Boot.InventoryServiceApplication.executor": "Run",
     "Spring Boot.OrderServiceApplication.executor": "Run",
     "Spring Boot.ProductServiceApplication.executor": "Run",
+    "Spring Boot.RatingServiceApplication.executor": "Run",
     "codeWithMe.voiceChat.enabledByDefault": "false",
     "git-widget-placeholder": "apolo__federetion",
     "kotlin-language-version-configured": "true",
@@ -63,37 +67,7 @@
     "nodejs_package_manager_path": "npm"
   }
 }]]></component>
-  <component name="RunManager" selected="Spring Boot.OrderServiceApplication">
-    <configuration default="true" type="JetRunConfigurationType">
-      <module name="mfe-demo" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration default="true" type="PythonConfigurationType" factoryName="Python">
-      <module name="mfe-demo" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="" />
-      <option name="IS_MODULE_SDK" value="false" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="DEBUG_JUST_MY_CODE" value="false" />
-      <option name="RUN_TOOL" value="" />
-      <option name="SCRIPT_NAME" value="" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
+  <component name="RunManager" selected="Spring Boot.InventoryServiceApplication">
     <configuration name="InventoryServiceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
       <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UnknownPolicyInFreeMode" />
       <module name="inventory-service" />
@@ -136,11 +110,26 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="RatingServiceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
+      <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UnknownPolicyInFreeMode" />
+      <module name="rating-service" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.demo.rating.RatingServiceApplication" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.demo.rating.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Spring Boot.OrderServiceApplication" />
         <item itemvalue="Spring Boot.InventoryServiceApplication" />
+        <item itemvalue="Spring Boot.OrderServiceApplication" />
         <item itemvalue="Spring Boot.ProductServiceApplication" />
+        <item itemvalue="Spring Boot.RatingServiceApplication" />
       </list>
     </recent_temporary>
   </component>
@@ -154,11 +143,11 @@
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="8e81680c-4bf7-49fb-91d1-5c042cffaff5" name="Changes" comment="" />
-      <created>1786889463449</created>
+      <changelist id="7f84d32d-eaab-48d5-8a02-67f7ba01f848" name="Changes" comment="" />
+      <created>1786936265638</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1786889463449</updated>
+      <updated>1786936265638</updated>
     </task>
     <servers />
   </component>
