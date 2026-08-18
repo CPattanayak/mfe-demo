@@ -9,6 +9,7 @@ import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.web.server.WebFilter;
 
 /**
  * Validates the Keycloak-issued JWT on every request (Bearer token that was
@@ -22,11 +23,23 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 @EnableWebFluxSecurity
 @EnableReactiveMethodSecurity
 public class SecurityConfig {
+    @Bean
+    public WebFilter graphqlCacheHeaderFilter() {
+        return (exchange, chain) -> {
+            if (exchange.getRequest().getURI().getPath().equals("/graphql")) {
+                exchange.getResponse().getHeaders()
+                        .setCacheControl("public, max-age=60");
+            }
+
+            return chain.filter(exchange);
+        };
+    }
 
     @Bean
     public SecurityWebFilterChain filterChain(ServerHttpSecurity http) {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
+
                 .authorizeExchange(ex -> ex
                         // Browsers never send an Authorization header on a CORS
                         // preflight OPTIONS request. Without this, Spring

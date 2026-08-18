@@ -19,8 +19,11 @@ import java.util.UUID;
  * package), NOT org.springframework.graphql.data.method.annotation
  * where @QueryMapping/@SchemaMapping/@BatchMapping live; @Argument is
  * still the normal one, shared across both.
- * Apollo Router's _entities(representations) query dispatches here
- * whenever a representation's __typename is "Product" — Spring GraphQL
+ * The federation gateway's _entities(representations) query dispatches
+ * here whenever a representation's __typename is "Product" — this is
+ * part of the Apollo Federation SPEC itself (any compliant gateway
+ * calls it the same way; currently Hive Gateway in this project, not
+ * Apollo Router — see infra/hive-gateway/), and Spring GraphQL
  * does all of the scanning/dispatch itself; nothing custom needed (see
  * FederationConfig.java for why an earlier version of this file
  * hand-rolled that unnecessarily).
@@ -28,6 +31,10 @@ import java.util.UUID;
  * @Argument binds "id" straight out of the entity representation map
  * (e.g. {"__typename": "Product", "id": "abc-123"}), same as it would
  * bind a normal query argument.
+ *
+ * Plain repository access — no caching code here. See
+ * ProductGraphQLController's javadoc for where caching now lives
+ * (the Hive Gateway layer, not this service).
  */
 @Controller
 @RequiredArgsConstructor

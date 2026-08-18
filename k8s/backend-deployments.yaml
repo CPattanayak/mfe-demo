@@ -83,8 +83,8 @@ spec:
 # see backend/inventory-service/.../ProductInventoryResolver.java and
 # infra/apollo-router/inventory.graphql. Owns no entity itself, has no
 # dependency on product-service/order-service being up first (federation
-# entity extension is resolved by Apollo Router at query time, not at
-# this pod's startup).
+# entity extension is resolved by the federation gateway at query time,
+# not at this pod's startup).
 apiVersion: apps/v1
 kind: Deployment
 metadata:

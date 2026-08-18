@@ -10,13 +10,15 @@
 #    they'd actually be published by CI for a shared QA environment.
 #  - Backend services get healthchecks and restart policies, since QA is
 #    meant to be a shared, longer-lived environment, not a throwaway dev box.
-#  - Federated: product-service and order-service are real Apollo
-#    Federation subgraphs (see backend/*/config/FederationConfig.java).
+#  - Federated: product-service, order-service, inventory-service, and
+#    rating-service are real Apollo Federation subgraphs (see
+#    backend/*/config/FederationConfig.java).
 #    supergraph-compose runs `rover supergraph compose` once at startup
 #    (from static SDL files, not live introspection — see
-#    infra/apollo-router/supergraph-config.yaml) to combine both
-#    subgraphs' schemas, and Apollo Router loads the result and does the
-#    actual federation query planning/parallel execution. `cdn`'s nginx
+#    infra/apollo-router/supergraph-config.yaml) to combine all four
+#    subgraphs' schemas, and Hive Gateway loads the result and does the
+#    actual federation query planning/parallel execution AND response
+#    caching (see infra/hive-gateway/gateway.config.ts). `cdn`'s nginx
 #    (see cdn/nginx.conf) is the ONE endpoint the browser talks to for
 #    everything — GraphQL and Keycloak auth are reverse-proxied straight
 #    through to Router/Keycloak internally, alongside serving the UI
@@ -88,6 +90,12 @@ services:
     restart: unless-stopped
 
 
+  # Backs Hive Gateway's response caching — see docker-compose.yml's
+  # identical comment.
+  redis:
+    image: redis:7-alpine
+    container_name: redis-qa
+    restart: unless-stopped
 
   # ---------------------------------------------------------------------
   # Federation layer — same mechanism as local docker-compose.yml, see
@@ -105,26 +113,34 @@ services:
       - ./infra/apollo-router/rating.graphql:/workspace/rating.graphql:ro
       - supergraph-schema-qa:/output
 
-  apollo-router:
-    image: ghcr.io/apollographql/router:v1.59.2
-    container_name: apollo-router-qa
+  # Replaces Apollo Router — see docker-compose.yml's identical comment.
+  hive-gateway:
+    image: ghcr.io/graphql-hive/gateway:latest
+    container_name: hive-gateway-qa
     depends_on:
       supergraph-compose:
         condition: service_completed_successfully
+      redis:
+        condition: service_started
+    environment:
+      HIVE_LOG_LEVEL: "debug"
     volumes:
-      - supergraph-schema-qa:/dist/schema
-      - ./infra/apollo-router/router.yaml:/dist/config/router.yaml:ro
-    command: ["-c", "config/router.yaml", "-s", "schema/supergraph.graphql", "--log", "info"]
+      - supergraph-schema-qa:/supergraph
+      - ./infra/hive-gateway/gateway.config.ts:/gateway/gateway.config.ts:ro
+    # --host 0.0.0.0 — see docker-compose.yml's identical comment for
+    # why this isn't redundant with the documented CLI default.
+    command: ["supergraph", "--host", "0.0.0.0"]
     restart: unless-stopped
 
   # Requirement: CDN-style deployment for QA (replaces MinIO from the local
   # docker-compose.yml). Serves shell at /, mfe-products at /products/,
   # mfe-orders at /orders/ — AND is the single entry point for
   # everything else too: /graphql and /realms/** are reverse-proxied
-  # straight through to apollo-router/keycloak by nginx itself (see
-  # cdn/nginx.conf). No separate gateway service — a whole JVM app doing
-  # nothing but static path routing wasn't justified once nginx (already
-  # required here to serve the UI) does the identical routing for free.
+  # straight through to hive-gateway/keycloak by nginx itself (see
+  # cdn/nginx.conf). No separate gateway service — a whole
+  # JVM app doing nothing but static path routing wasn't justified once
+  # nginx (already required here to serve the UI) does the identical
+  # routing for free.
   cdn:
     build:
       context: .
@@ -136,7 +152,7 @@ services:
         APP_ENV: qa
     container_name: cdn-qa
     depends_on:
-      apollo-router:
+      hive-gateway:
         condition: service_started
       keycloak:
         condition: service_started

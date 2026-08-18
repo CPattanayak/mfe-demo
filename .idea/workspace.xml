@@ -4,31 +4,34 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7f84d32d-eaab-48d5-8a02-67f7ba01f848" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+    <list default="true" id="37b86e18-5f3c-424b-a925-b09d03f8f774" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/inventory-service/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/backend/inventory-service/Dockerfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/order-service/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/backend/order-service/Dockerfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/product-service/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/backend/product-service/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/inventory-service/src/main/java/com/demo/inventory/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/inventory-service/src/main/java/com/demo/inventory/config/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/product-service/src/main/java/com/demo/product/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/product-service/src/main/java/com/demo/product/config/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/product-service/src/main/java/com/demo/product/graphql/ProductEntityResolver.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/product-service/src/main/java/com/demo/product/graphql/ProductEntityResolver.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/product-service/src/main/java/com/demo/product/graphql/ProductGraphQLController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/product-service/src/main/java/com/demo/product/graphql/ProductGraphQLController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rating-service/src/main/java/com/demo/rating/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rating-service/src/main/java/com/demo/rating/config/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/rating-service/src/main/java/com/demo/rating/graphql/ProductRatingResolver.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/rating-service/src/main/java/com/demo/rating/graphql/ProductRatingResolver.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cdn/nginx.conf" beforeDir="false" afterPath="$PROJECT_DIR$/cdn/nginx.conf" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docker-compose.qa.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.qa.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-products/src/components/ProductEdit.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-products/src/components/ProductEdit.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-products/src/graphql/productQueries.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-products/src/graphql/productQueries.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/graphql/dashboardQuery.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/graphql/dashboardQuery.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/graphql/productLookupQueries.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/graphql/productLookupQueries.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/shared-auth/src/config.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/shared-auth/src/config.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/infra/apollo-router/router.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/infra/apollo-router/router.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/infra/apollo-router/supergraph-config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/infra/apollo-router/supergraph-config.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/infra/postgres/init.sql" beforeDir="false" afterPath="$PROJECT_DIR$/infra/postgres/init.sql" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/k8s/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/k8s/apollo-router.yaml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/k8s/backend-deployments.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/backend-deployments.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/k8s/cdn.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/cdn.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/k8s/frontend-deployments.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/frontend-deployments.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/k8s/ingress.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/ingress.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/k8s/keycloak.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/keycloak.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/k8s/minio.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/minio.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/k8s/qa/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/qa/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/k8s/qa/apollo-router.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/qa/apollo-router.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/k8s/qa/apollo-router.yaml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/k8s/qa/backend-deployments.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/qa/backend-deployments.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/k8s/qa/ingress.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/qa/ingress.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/k8s/qa/secrets.example.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/qa/secrets.example.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/k8s/secrets.example.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/k8s/secrets.example.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -42,7 +45,7 @@
   "customColor": "",
   "associatedIndex": 1
 }]]></component>
-  <component name="ProjectId" id="3I1dydbrF8boxgX58YSUgY20ypS" />
+  <component name="ProjectId" id="3I4brbRG97QZgpQbkfaM6WHXZvG" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -64,10 +67,11 @@
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm"
+    "nodejs_package_manager_path": "npm",
+    "ts.external.directory.path": "C:\\Program Files\\JetBrains\\IntelliJ IDEA 2026.1.2\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external"
   }
 }]]></component>
-  <component name="RunManager" selected="Spring Boot.InventoryServiceApplication">
+  <component name="RunManager" selected="Spring Boot.RatingServiceApplication">
     <configuration name="InventoryServiceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
       <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UnknownPolicyInFreeMode" />
       <module name="inventory-service" />
@@ -126,10 +130,10 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Spring Boot.RatingServiceApplication" />
         <item itemvalue="Spring Boot.InventoryServiceApplication" />
         <item itemvalue="Spring Boot.OrderServiceApplication" />
         <item itemvalue="Spring Boot.ProductServiceApplication" />
-        <item itemvalue="Spring Boot.RatingServiceApplication" />
       </list>
     </recent_temporary>
   </component>
@@ -143,11 +147,11 @@
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="7f84d32d-eaab-48d5-8a02-67f7ba01f848" name="Changes" comment="" />
-      <created>1786936265638</created>
+      <changelist id="37b86e18-5f3c-424b-a925-b09d03f8f774" name="Changes" comment="" />
+      <created>1787026993308</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1786936265638</updated>
+      <updated>1787026993308</updated>
     </task>
     <servers />
   </component>

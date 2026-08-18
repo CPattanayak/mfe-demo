@@ -18,7 +18,7 @@ spec:
       secretName: mfe-demo-qa-tls
   rules:
     # Single host, single backend: cdn's nginx (see cdn/nginx.conf)
-    # already does all the internal routing — GraphQL to apollo-router,
+    # already does all the internal routing — GraphQL to hive-gateway,
     # Keycloak auth to keycloak, everything else as static UI assets.
     # The Ingress doesn't need to know any of that; it just needs to get
     # every request to cdn. (Older versions of this file routed

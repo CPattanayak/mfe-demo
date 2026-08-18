@@ -6,23 +6,9 @@ supergraph:
   path: /graphql
   introspection: true
 
-# CORS needed for two reasons: (1) local dev's shell (localhost:3000)
-# calls Router directly on a different port (localhost:4000) — genuinely
-# cross-origin; (2) QA/production's cdn/nginx.conf reverse-proxies /graphql
-# to Router internally (see that file), which is same-origin from the
-# browser's perspective and doesn't strictly need this, but permissive
-# CORS here is also handy for hitting Router's own sandbox UI directly.
 cors:
   allow_any_origin: true
-  allow_headers:
-    - Authorization
-    - Content-Type
-  allow_credentials: false
 
-# Critical: Router does NOT forward client headers to subgraphs by
-# default. Both product-service and order-service require a Bearer JWT
-# (SecurityConfig.java's OAuth2 resource server config) — without this,
-# every subgraph request would arrive unauthenticated and get rejected.
 headers:
   all:
     request:

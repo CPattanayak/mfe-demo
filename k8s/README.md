@@ -2,8 +2,10 @@
 
 This mirrors `k8s/qa/` (see that directory's own README for the QA-
 specific differences) — same architecture: federated GraphQL behind
-Apollo Router, a single `cdn` origin serving the UI and reverse-proxying
-GraphQL/auth, one Ingress host/backend.
+Hive Gateway (an Apollo-Federation-compatible, MIT-licensed alternative
+to Apollo Router — see `infra/hive-gateway/gateway.config.ts`), a single
+`cdn` origin serving the UI and reverse-proxying GraphQL/auth, one
+Ingress host/backend.
 
 ## Apply order
 
@@ -16,8 +18,8 @@ kubectl apply -f secrets.example.yaml     # copy, fill in real secrets first!
 kubectl create configmap postgres-init \
   --from-file=init.sql=infra/postgres/init.sql \
   -n mfe-demo --dry-run=client -o yaml | kubectl apply -f -
-kubectl create configmap apollo-router-config \
-  --from-file=router.yaml=infra/apollo-router/router.yaml \
+kubectl create configmap hive-gateway-config \
+  --from-file=gateway.config.ts=infra/hive-gateway/gateway.config.ts \
   --from-file=supergraph-config.yaml=infra/apollo-router/supergraph-config.yaml \
   --from-file=product.graphql=infra/apollo-router/product.graphql \
   --from-file=order.graphql=infra/apollo-router/order.graphql \
@@ -27,8 +29,9 @@ kubectl create configmap apollo-router-config \
 
 kubectl apply -f postgres.yaml
 kubectl apply -f keycloak.yaml
+kubectl apply -f redis.yaml
 kubectl apply -f backend-deployments.yaml
-kubectl apply -f apollo-router.yaml
+kubectl apply -f hive-gateway.yaml
 kubectl apply -f cdn.yaml
 kubectl apply -f ingress.yaml
 ```
@@ -66,7 +69,8 @@ docker build -f cdn/Dockerfile \
   --build-arg ORDERS_REMOTE_URL=/orders/remoteEntry.js \
   -t ghcr.io/your-org/mfe-cdn:latest .
 
-# rover-compose (the apollo-router.yaml initContainer image)
+# rover-compose (the hive-gateway.yaml initContainer image — unchanged
+# by the Hive Gateway migration, still built from infra/apollo-router/)
 docker build -f infra/apollo-router/rover-compose/Dockerfile \
   -t ghcr.io/your-org/rover-compose:latest infra/apollo-router/rover-compose
 
@@ -93,7 +97,7 @@ are placeholders for getting the topology right locally/in staging first.
   unlike `k8s/qa/keycloak.yaml`).
 - Add `HorizontalPodAutoscaler`s for the stateless Deployments
   (product-service, order-service, inventory-service, rating-service,
-  apollo-router, cdn).
+  hive-gateway, cdn).
 - Add NetworkPolicies restricting product-service/order-service/
   inventory-service/rating-service to only be reachable from inside the
   cluster — none of the four publish a host port even in this file;

@@ -10,21 +10,28 @@ the prod-style deployment) — same services, but:
   — instead of a raw object-store bucket. This is what you'd point a real
   cloud CDN (CloudFront / Cloud CDN / Cloudflare) at if this QA env is
   externally reachable.
-- **Federated GraphQL.** `product-service`/`order-service` are real
-  Apollo Federation subgraphs (see `backend/*/config/FederationConfig.java`).
-  `apollo-router.yaml`'s initContainer runs `rover supergraph compose`
+- **Federated GraphQL.** `product-service`/`order-service`/
+  `inventory-service`/`rating-service` are real Apollo Federation
+  subgraphs (see `backend/*/config/FederationConfig.java`).
+  `hive-gateway.yaml`'s initContainer runs `rover supergraph compose`
   fresh on every pod start (static SDL files, not live introspection —
-  see `infra/apollo-router/`), and Apollo Router does the actual
-  federation query planning/parallel subgraph execution.
+  see `infra/apollo-router/`, still named that since `rover` — an
+  Apollo CLI tool — still does this composition step), and Hive Gateway
+  (an Apollo-Federation-compatible, MIT-licensed alternative to Apollo
+  Router — see `infra/hive-gateway/gateway.config.ts` for why) does the
+  actual federation query planning/parallel subgraph execution AND
+  response caching (`product`/`rating` data only — see that file's
+  comments for the scoping rationale).
 - **Single entry point, no separate gateway.** `cdn`'s nginx (see
-  `cdn/nginx.conf`) reverse-proxies `/graphql` to Apollo Router and
+  `cdn/nginx.conf`) reverse-proxies `/graphql` to Hive Gateway and
   `/realms/**` to Keycloak, alongside serving the UI itself — it's the
-  ONLY thing `ingress.yaml` routes to. A dedicated gateway app would just
-  be doing the identical path-routing nginx already does for free.
-- Single replica for stateful/backing services (Postgres, Keycloak) and
-  the backend microservices — QA doesn't need prod-level redundancy.
-  Apollo Router and the CDN run 2 replicas each (stateless, cheap to
-  scale).
+  ONLY thing `ingress.yaml` routes to. A dedicated application gateway
+  would just be doing the identical path-routing nginx already does for
+  free.
+- Single replica for stateful/backing services (Postgres, Keycloak,
+  Redis) and the backend microservices — QA doesn't need prod-level
+  redundancy. Hive Gateway and the CDN run 2 replicas each (stateless,
+  cheap to scale).
 - `letsencrypt-staging` cert issuer instead of `letsencrypt-prod`, to avoid
   burning your production rate limits while testing.
 - Keycloak keeps `--import-realm` enabled (prod turns it off after first
@@ -44,8 +51,8 @@ kubectl create configmap postgres-init \
 kubectl create configmap keycloak-realm \
   --from-file=realm-export.json=infra/keycloak/realm-export.json \
   -n mfe-demo-qa --dry-run=client -o yaml | kubectl apply -f -
-kubectl create configmap apollo-router-config \
-  --from-file=router.yaml=infra/apollo-router/router.yaml \
+kubectl create configmap hive-gateway-config \
+  --from-file=gateway.config.ts=infra/hive-gateway/gateway.config.ts \
   --from-file=supergraph-config.yaml=infra/apollo-router/supergraph-config.yaml \
   --from-file=product.graphql=infra/apollo-router/product.graphql \
   --from-file=order.graphql=infra/apollo-router/order.graphql \
@@ -55,8 +62,9 @@ kubectl create configmap apollo-router-config \
 
 kubectl apply -f k8s/qa/postgres.yaml
 kubectl apply -f k8s/qa/keycloak.yaml
+kubectl apply -f k8s/qa/redis.yaml
 kubectl apply -f k8s/qa/backend-deployments.yaml
-kubectl apply -f k8s/qa/apollo-router.yaml
+kubectl apply -f k8s/qa/hive-gateway.yaml
 kubectl apply -f k8s/qa/cdn.yaml
 kubectl apply -f k8s/qa/ingress.yaml
 ```
@@ -103,7 +111,8 @@ docker build -f cdn/Dockerfile \
   -t ghcr.io/your-org/mfe-cdn:qa .
 docker push ghcr.io/your-org/mfe-cdn:qa
 
-# rover-compose (the apollo-router.yaml initContainer image)
+# rover-compose (the hive-gateway.yaml initContainer image — unchanged
+# by the Hive Gateway migration, still built from infra/apollo-router/)
 docker build -f infra/apollo-router/rover-compose/Dockerfile \
   -t ghcr.io/your-org/rover-compose:qa infra/apollo-router/rover-compose
 docker push ghcr.io/your-org/rover-compose:qa

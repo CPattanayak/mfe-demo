@@ -38,6 +38,15 @@ import java.util.UUID;
  * the schema's nullable Product.rating field, unlike inventory's
  * non-null [Inventory!]! list (which needed an explicit empty-list
  * fallback instead).
+ *
+ * Plain repository access, ONE bulk query for the whole batch — no
+ * caching code here at all. Response caching moved to the GATEWAY layer
+ * (see infra/hive-gateway/gateway.config.ts), which caches the whole
+ * GraphQL response per-type rather than individual method calls — so,
+ * unlike the earlier Spring-side @Cacheable approach, this resolver
+ * doesn't need restructuring into per-id lookups to benefit from
+ * caching; the efficient single-bulk-query DataLoader shape and the
+ * gateway's response caching are independent, complementary layers.
  */
 @Controller
 @RequiredArgsConstructor

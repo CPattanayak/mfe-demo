@@ -5,7 +5,7 @@
 # origin (image built from ./cdn/Dockerfile), with real immutable-asset
 # cache headers. Also the single entry point for GraphQL and Keycloak
 # auth — see cdn/nginx.conf's reverse-proxy blocks for /graphql and
-# /realms/**. This unification is what let apollo-router.yaml's gateway
+# /realms/**. This unification is what let hive-gateway.yaml's gateway
 # model actually work in production: a single catch-all "everything else"
 # route needs ONE static origin to point at, which three separate
 # Deployments on three separate paths structurally couldn't provide.

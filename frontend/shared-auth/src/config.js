@@ -10,15 +10,18 @@
  * given build.
  *
  * `graphqlUrl` is ONE endpoint, not two: with Apollo Federation (see
- * backend/*\/config/FederationConfig.java + infra/apollo-router/),
- * product-service and order-service compose into a single supergraph
- * schema served through Apollo Router. mfe-products and mfe-orders both
- * read this same field; there's no more separate productGraphqlUrl/
- * orderGraphqlUrl split.
+ * backend/*\/config/FederationConfig.java + infra/hive-gateway/), all
+ * four subgraphs compose into a single supergraph schema served through
+ * Hive Gateway (an Apollo-Federation-compatible gateway — not Apollo's
+ * own Router binary; see infra/hive-gateway/gateway.config.ts for why).
+ * mfe-products and mfe-orders both read this same field; there's no
+ * separate productGraphqlUrl/orderGraphqlUrl split.
  *
- * No separate gateway service: in local dev, this points directly at
- * Apollo Router's own port (:4000). In qa/production, cdn/nginx.conf
- * reverse-proxies BOTH /graphql (to Apollo Router) and /realms/** (to
+ * No separate application gateway service: in local dev, this points
+ * directly at Hive Gateway's own port (:4000, same default port Apollo
+ * Router also used — no URL change needed when migrating between the
+ * two). In qa/production, cdn/nginx.conf reverse-proxies BOTH /graphql
+ * (to Hive Gateway) and /realms/** (to
  * Keycloak) on the SAME origin as the UI itself — so graphqlUrl is a
  * relative path (resolves against whatever host actually served the
  * page, via HttpLink's normal relative-URI handling) and keycloakUrl
@@ -42,9 +45,9 @@ const ENVIRONMENTS = {
     keycloakUrl: "http://localhost:8080",
     keycloakRealm: "microfrontend-demo",
     keycloakClientId: "web-app",
-    // Directly to Apollo Router — no gateway/nginx proxy in front of it
-    // in local dev, so this can't be relative (there's no single origin
-    // shared with a proxy to resolve it against).
+    // Directly to Hive Gateway — no nginx proxy in front of it in local
+    // dev, so this can't be relative (there's no single origin shared
+    // with a proxy to resolve it against).
     graphqlUrl: "/graphql",
   },
   qa: {

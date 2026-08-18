@@ -1,0 +1,100 @@
+# Federation layer for production. An initContainer runs `rover
+# supergraph compose` (same static-SDL-file approach as
+# docker-compose.qa.yml — see infra/apollo-router/) into a shared
+# emptyDir volume before the main hive-gateway container starts. This
+# recomposes fresh on every pod (re)start rather than relying on a
+# separate one-off Job that could go stale relative to whatever image
+# versions are actually running.
+#
+# Replaces apollo-router.yaml. Same rover-composed supergraph.graphql
+# artifact (Hive Gateway explicitly supports Rover-composed supergraphs
+# — confirmed via Hive's own docs), different gateway binary. See
+# infra/hive-gateway/gateway.config.ts for why: response caching for
+# product-service/rating-service now lives entirely at this layer.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hive-gateway-config
+  namespace: mfe-demo
+data:
+  # Populate via (keeps this file DRY and always in sync with the real
+  # repo files, rather than a second copy pasted into this YAML):
+  #   kubectl create configmap hive-gateway-config \
+  #     --from-file=gateway.config.ts=infra/hive-gateway/gateway.config.ts \
+  #     --from-file=supergraph-config.yaml=infra/apollo-router/supergraph-config.yaml \
+  #     --from-file=product.graphql=infra/apollo-router/product.graphql \
+  #     --from-file=order.graphql=infra/apollo-router/order.graphql \
+  #     --from-file=inventory.graphql=infra/apollo-router/inventory.graphql \
+  #     --from-file=rating.graphql=infra/apollo-router/rating.graphql \
+  #     -n mfe-demo --dry-run=client -o yaml | kubectl apply -f -
+  gateway.config.ts: "placeholder"
+  supergraph-config.yaml: "placeholder"
+  product.graphql: "placeholder"
+  order.graphql: "placeholder"
+  inventory.graphql: "placeholder"
+  rating.graphql: "placeholder"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hive-gateway
+  namespace: mfe-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: hive-gateway }
+  template:
+    metadata:
+      labels: { app: hive-gateway }
+    spec:
+      initContainers:
+        - name: supergraph-compose
+          # Built from infra/apollo-router/rover-compose/Dockerfile — this
+          # step is completely unchanged by the Hive Gateway migration.
+          image: ghcr.io/your-org/rover-compose:latest
+          volumeMounts:
+            - { name: gateway-config, mountPath: /workspace/supergraph-config.yaml, subPath: supergraph-config.yaml }
+            - { name: gateway-config, mountPath: /workspace/product.graphql, subPath: product.graphql }
+            - { name: gateway-config, mountPath: /workspace/order.graphql, subPath: order.graphql }
+            - { name: gateway-config, mountPath: /workspace/inventory.graphql, subPath: inventory.graphql }
+            - { name: gateway-config, mountPath: /workspace/rating.graphql, subPath: rating.graphql }
+            - { name: supergraph-output, mountPath: /output }
+      containers:
+        - name: hive-gateway
+          image: ghcr.io/graphql-hive/gateway:latest
+          # No explicit path arg — gateway.config.ts's own `supergraph`
+          # field already points at /supergraph/supergraph.graphql (see
+          # the volumeMount below), matching the mounted path here.
+          # --host 0.0.0.0 IS required despite being the documented CLI
+          # default — confirmed via actual container logs (docker-compose
+          # testing) that this exact image/version was binding to
+          # 127.0.0.1 (loopback-only) without it, which is unreachable
+          # from other pods and would fail kubelet's tcpSocket probe
+          # below the same way it caused a real 502 through nginx.
+          args: ["supergraph", "--host", "0.0.0.0"]
+          workingDir: /gateway
+          ports: [{ containerPort: 4000 }]
+          volumeMounts:
+            - { name: gateway-config, mountPath: /gateway/gateway.config.ts, subPath: gateway.config.ts }
+            - { name: supergraph-output, mountPath: /supergraph }
+          readinessProbe:
+            tcpSocket: { port: 4000 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 200m, memory: 384Mi }
+            limits: { cpu: "1", memory: 768Mi }
+      volumes:
+        - name: gateway-config
+          configMap: { name: hive-gateway-config }
+        - name: supergraph-output
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hive-gateway
+  namespace: mfe-demo
+spec:
+  selector: { app: hive-gateway }
+  ports: [{ port: 4000, targetPort: 4000 }]

@@ -157,12 +157,13 @@ services:
   # Federation layer: rover composes all FOUR subgraphs' STATIC SDL files
   # (product.graphql/order.graphql/inventory.graphql/rating.graphql, kept
   # in sync by hand with each service's real schema.graphqls) into ONE
-  # supergraph.graphql — an offline step, NOT done by Router itself.
-  # Apollo Router then loads that file and does the actual federation
-  # query planning/parallel subgraph execution at request time. See
-  # infra/apollo-router/ for all the config files. File-based composition
-  # means this doesn't need any of the four services to be running at all
-  # to compose — it runs immediately, in parallel with them starting up.
+  # supergraph.graphql — an offline step, done by rover, not by the
+  # gateway itself. Hive Gateway (below) then loads that file and does
+  # the actual federation query planning/parallel subgraph execution.
+  # See infra/apollo-router/ for all the config files. File-based
+  # composition means this doesn't need any of the four services to be
+  # running at all to compose — it runs immediately, in parallel with
+  # them starting up.
   # ---------------------------------------------------------------------
   supergraph-compose:
     build:
@@ -176,16 +177,40 @@ services:
       - ./infra/apollo-router/rating.graphql:/workspace/rating.graphql:ro
       - supergraph-schema:/output
 
-  apollo-router:
-    image: ghcr.io/apollographql/router:v1.59.2
-    container_name: apollo-router
+  # Backs Hive Gateway's response caching (see
+  # infra/hive-gateway/gateway.config.ts) — caches product-service/
+  # rating-service responses, since that data changes infrequently.
+  # order-service and inventory-service are deliberately NOT cached (see
+  # that file's comment on why).
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  # Replaces Apollo Router — same rover-composed supergraph.graphql
+  # artifact (see supergraph-compose above, unchanged), different
+  # gateway binary. See infra/hive-gateway/gateway.config.ts for why:
+  # response caching now lives entirely here, not in product-service/
+  # rating-service.
+  hive-gateway:
+    image: ghcr.io/graphql-hive/gateway:latest
+    container_name: hive-gateway
     depends_on:
       supergraph-compose:
         condition: service_completed_successfully
+      redis:
+        condition: service_started
     volumes:
-      - supergraph-schema:/dist/schema
-      - ./infra/apollo-router/router.yaml:/dist/config/router.yaml:ro
-    command: ["-c", "config/router.yaml", "-s", "schema/supergraph.graphql", "--log", "info"]
+      - supergraph-schema:/supergraph
+      - ./infra/hive-gateway/gateway.config.ts:/gateway/gateway.config.ts:ro
+    # --host 0.0.0.0 is NOT redundant with the documented CLI default —
+    # confirmed via actual container logs that this exact image/version
+    # was binding to 127.0.0.1 (loopback-only, unreachable from other
+    # containers on the Docker network) despite the CLI reference
+    # stating 0.0.0.0 as the default. Explicit beats documented-but-
+    # not-actually-observed default; this is what fixed a real 502.
+    command: ["supergraph", "--host", "0.0.0.0"]
     ports:
       - "4000:4000"
 
@@ -206,7 +231,8 @@ services:
   # container, but the GraphQL URL is baked into the JS bundle at IMAGE
   # BUILD time via config.js's APP_ENV-selected block (see
   # frontend/shared-auth/src/config.js's "local" entry: graphqlUrl points
-  # directly at apollo-router on :4000 — no separate gateway needed).
+  # directly at hive-gateway on :4000 — no separate application gateway
+  # needed).
   mfe-products:
     build:
       context: ./frontend
