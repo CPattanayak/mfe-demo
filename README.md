@@ -1,336 +1,797 @@
-# Module Federation + Keycloak + GraphQL + R2DBC Sample Platform
+# Unified GraphQL Platform
 
-A reference/sample project showing how to wire together a React Module
-Federation micro‑frontend platform with Keycloak auth, Apollo Client,
-Spring GraphQL microservices (reactive, R2DBC), DataLoader batching,
-GraphQL‑level permissions, MinIO static hosting, and Kubernetes deployment.
+### GraphQL Federation · Micro Frontends · AI Agents · MCP · Keycloak · Spring Boot · R2DBC · PostgreSQL
 
-> This is a **learning scaffold**, not a production-hardened system. Secrets,
-> TLS, HA config, etc. are simplified so the architecture is easy to read.
-> Treat every password/secret in this repo as a placeholder to rotate.
+A full-stack reference architecture for building a **unified GraphQL platform for every client** — Web, Mobile, External Applications, and AI Agents.
 
-## What's included, mapped to your requirements
+The platform combines **React Module Federation**, **GraphQL Federation**, **Hive GraphQL Gateway**, **Apollo MCP**, **LangGraph**, **Keycloak**, **Spring Boot**, **R2DBC**, **PostgreSQL**, and **Redis response caching** into a single client-agnostic API platform.
 
-| # | Requirement | Where |
+> **Build domain capabilities once and expose them consistently to every client through a unified GraphQL platform.**
+
+---
+
+## Architecture
+
+![Unified GraphQL Platform Architecture](docs/architecture/unified-graphql-platform.png)
+
+The architecture follows this flow:
+
+```text
+Web / Mobile / External Clients
+             │
+          GraphQL
+             │
+             ▼
+     Hive GraphQL Gateway
+             │
+      Federation + Cache
+             │
+       ┌─────┼─────┐
+       ▼     ▼     ▼
+    Product Order Inventory
+       │     │     │
+       └─────┼─────┘
+             ▼
+         PostgreSQL
+
+AI Agent / LangGraph
+             │
+            MCP
+             ▼
+     Apollo MCP Gateway
+             │
+          GraphQL
+             ▼
+     Hive GraphQL Gateway
+```
+
+The **Hive GraphQL Gateway is the central API platform**. Apollo MCP acts as an agent-facing protocol adapter; it does not bypass the federated GraphQL layer.
+
+---
+
+# Why This Architecture?
+
+Traditional architectures often create separate APIs for different consumers:
+
+```text
+Web       → REST API
+Mobile    → REST API
+Partners  → REST API
+AI Agent  → Agent-specific API
+```
+
+This can lead to duplicated contracts and integration logic.
+
+This project takes a different approach:
+
+```text
+                    Unified GraphQL Platform
+                              │
+             ┌────────────────┼────────────────┐
+             │                │                │
+            Web             Mobile           AI
+             │                │                │
+             └────────────────┼────────────────┘
+                              │
+                     Federated Graph
+                              │
+                       Domain Services
+```
+
+GraphQL is the **canonical domain API**, while MCP provides an AI-compatible access protocol.
+
+---
+
+# Core Principles
+
+### One platform for every client
+
+The same domain graph can serve:
+
+- React applications
+- Mobile applications
+- External applications
+- Internal enterprise applications
+- AI agents
+- Agentic workflows
+
+### Domain ownership through Federation
+
+Business capabilities are modeled as independently owned GraphQL subgraphs:
+
+```text
+Product
+Order
+Inventory
+Rating
+Customer
+```
+
+### MCP as an adapter
+
+The AI request path is:
+
+```text
+LangGraph
+    │
+    │ MCP
+    ▼
+Apollo MCP Gateway
+    │
+    │ GraphQL
+    ▼
+Hive GraphQL Gateway
+    │
+    ▼
+Federated Graph
+    │
+    ▼
+Domain Services
+```
+
+### Centralized response caching
+
+GraphQL response caching is implemented at the gateway layer, allowing both UI and agent traffic to use the same caching strategy.
+
+### Centralized identity
+
+Keycloak provides OAuth2/OIDC authentication and the authenticated context can flow through the API platform to the domain services.
+
+---
+
+# Platform Components
+
+| Layer | Technology | Responsibility |
 |---|---|---|
-| 1 | React Module Federation micro-frontends | `frontend/shell` (host) + `frontend/mfe-products`, `frontend/mfe-orders` (remotes). Each remote owns its own `list` / `create` / `:id/edit` routes (`ProductsApp.jsx`, `OrdersApp.jsx`) built from individual `.jsx` components under `src/components/`, and the shell's nav (`components/NavGroup.jsx`) exposes "List"/"Create" as sub-links under "Products"/"Orders" |
-| 2 | Publish to MinIO via Docker (local dev) / CDN (QA) | `infra/minio`, `docker-compose.yml` (`mc` bucket bootstrap job), `k8s/minio.yaml`, `scripts/publish-to-minio.sh` for local dev; `cdn/`, `docker-compose.qa.yml`, `k8s/qa/cdn.yaml` for QA |
-| 3 | Keycloak login | `infra/keycloak/realm-export.json`, `frontend/shared-auth` |
-| 4 | Regular refresh token + shared auth token across MFEs | `frontend/shared-auth/src/authClient.js` (silent refresh loop), exposed as a Module Federation shared singleton |
-| 5 | Logout + change password URLs | `frontend/shared-auth/src/authClient.js` (`logout()`, `changePassword()`) |
-| 6 | Apollo Client to backend GraphQL | `frontend/shared-auth/src/apolloClient.js` |
-| 7 | Spring microservices exposing GraphQL schema | `backend/product-service`, `backend/order-service` (Spring GraphQL) |
-| 8 | DataLoader to fix N+1 | `backend/order-service/.../dataloader/ProductDataLoader.java` (batches Order→Product lookups) |
-| 9 | GraphQL permissions | `@PreAuthorize` on `@SchemaMapping`/`@MutationMapping` methods, backed by Keycloak realm roles in the JWT |
-| 10 | Postgres R2DBC reactive repos for queries & mutations | `ProductRepository`, `OrderRepository` (`ReactiveCrudRepository`) |
-| 11 | Kubernetes deployment for prod | `k8s/*.yaml` |
-| 12 | One DB, multiple schemas | `infra/postgres/init.sql` (`product_schema`, `order_schema` in a single `appdb` database) |
-| — | Per-environment config | `frontend/shared-auth/src/config.js` (local/qa/production URL sets, selected at build time by `APP_ENV`) |
+| Web UI | React | User-facing application |
+| Micro Frontends | Webpack Module Federation | Independently deployable UI modules |
+| Authentication | Keycloak | OAuth2/OIDC authentication |
+| GraphQL Client | Apollo Client | Client-side GraphQL communication |
+| API Gateway | Hive GraphQL Gateway | Unified GraphQL entry point |
+| Federation | GraphQL Federation | Compose domain subgraphs |
+| Response Cache | Redis | Query response caching |
+| AI Protocol | MCP | Agent-to-tool communication |
+| MCP Gateway | Apollo MCP | Expose GraphQL operations as MCP tools |
+| Agent Orchestration | LangGraph | Agent reasoning and workflow |
+| Domain Services | Spring Boot | Business capabilities |
+| GraphQL | Spring GraphQL | Domain API |
+| Reactive Data | R2DBC | Non-blocking database access |
+| Database | PostgreSQL | Transactional persistence |
+| DataLoader | DataLoader | Batch related GraphQL lookups |
+| Static Assets | MinIO / CDN | Micro-frontend hosting |
+| Deployment | Docker / Kubernetes | Containerized deployment |
 
-## High-level architecture
+---
 
-```
-                         ┌─────────────────────────┐
-                         │        Keycloak          │
-                         │  realm: microfrontend-demo│
-                         └────────────┬─────────────┘
-                                      │ OIDC (PKCE)
-                                      ▼
-┌───────────────────────────── Browser ─────────────────────────────┐
-│  shell (host, MF)                                                  │
-│   ├─ shared-auth (singleton via Module Federation "shared")        │
-│   │    - keycloak-js session, silent refresh, Apollo Client        │
-│   ├─ remote: mfe-products  ──┐                                     │
-│   └─ remote: mfe-orders    ──┤  both reuse the SAME Keycloak token │
-└──────────────────────────────┼──────────────────────────────────────┘
-                                │ GraphQL (Bearer <access_token>)
-                 ┌──────────────┴───────────────┐
-                 ▼                               ▼
-     ┌────────────────────┐          ┌────────────────────┐
-     │   product-service   │          │    order-service    │
-     │  Spring GraphQL      │◄────────┤  Spring GraphQL      │
-     │  R2DBC (product_schema)│ WebClient (batched via     │
-     │                      │  DataLoader) │  R2DBC (order_schema)│
-     └──────────┬───────────┘          └──────────┬───────────┘
-                │                                  │
-                └───────────────┬──────────────────┘
-                                 ▼
-                     ┌─────────────────────┐
-                     │   PostgreSQL: appdb   │
-                     │  schemas: product_schema, order_schema │
-                     └─────────────────────┘
+# Web Client Architecture
 
-MinIO hosts the built static assets for shell / mfe-products / mfe-orders
-(each MFE is published as an object prefix, served through nginx or the
-MinIO console/gateway, or fronted by an Ingress in k8s).
+The web application uses React Module Federation.
+
+```text
+React Shell
+    │
+    ├── Products MFE
+    ├── Orders MFE
+    └── Shared Authentication
 ```
 
-## Importing into an IDE
+Each micro frontend can be independently developed and deployed.
 
-**Backend (Java/Maven):** open/import the root **`pom.xml`** — it's a Maven
-reactor/aggregator POM whose `<modules>` are `backend/product-service` and
-`backend/order-service`. Importing it (IntelliJ: *Open* → select
-`pom.xml`; Eclipse/VS Code + Java extension pack: *Import Maven Project*)
-pulls in both microservices as linked modules, so you get cross-module
-navigation, one consistent dependency/BOM version set, and can run
-`mvn -pl backend/product-service -am spring-boot:run` (or the equivalent
-"Run" button per module) straight from the IDE. `mvn clean install` from
-the root builds both services in the correct order.
+The shell provides application composition, navigation, and shared authentication.
 
-**Frontend (Node/webpack):** open the `frontend/` folder directly in a
-JS-aware editor (VS Code, WebStorm). It's a set of independent npm
-packages (`shell`, `mfe-products`, `mfe-orders`, `shared-auth`) rather than
-a single npm/yarn workspace — see the per-package `package.json` files. If
-you'd rather manage them as one workspace, add a root `package.json` with
-`"workspaces": ["frontend/*"]` and run `npm install` from `frontend/`.
+---
 
-## Repo layout (top-level)
+# AI Agent Architecture
 
+AI agents consume the same GraphQL platform through MCP.
+
+```text
+User
+ │
+ ▼
+LangGraph Agent
+ │
+ ├── Reasoning
+ ├── Planning
+ ├── Tool Selection
+ └── Workflow
+ │
+ ▼
+Apollo MCP Gateway
+ │
+ ▼
+Hive GraphQL Gateway
+ │
+ ▼
+Federated Graph
 ```
+
+For example:
+
+> Find products under ₹10,000 that are in stock and have a rating above 4.
+
+The agent can decompose the task into operations such as:
+
+```text
+searchProducts()
+      ↓
+getRatings()
+      ↓
+checkInventory()
+      ↓
+selectProducts()
+```
+
+The underlying business capabilities remain GraphQL-based.
+
+---
+
+# GraphQL Federation
+
+The gateway composes independently owned domain subgraphs into a unified graph.
+
+```text
+                 Unified Graph
+                      │
+       ┌──────────────┼──────────────┐
+       │              │              │
+    Product          Order        Inventory
+    Subgraph         Subgraph       Subgraph
+       │              │              │
+       ▼              ▼              ▼
+   Product DB       Order DB      Inventory DB
+```
+
+A client does not need to know which service owns a field.
+
+Example:
+
+```graphql
+query ProductDetails($id: ID!) {
+  product(id: $id) {
+    id
+    name
+    price
+    inventory {
+      available
+    }
+    rating {
+      average
+    }
+  }
+}
+```
+
+The gateway composes the response across the appropriate subgraphs.
+
+---
+
+# Response Caching
+
+Response caching is implemented at the GraphQL gateway layer using Redis.
+
+```text
+Client
+  │
+  ▼
+Hive Gateway
+  │
+  ├── Redis Cache HIT
+  │       │
+  │       └── Return cached response
+  │
+  └── Cache MISS
+          │
+          ▼
+      Federation
+          │
+          ▼
+      Subgraphs
+          │
+          ▼
+       Response
+          │
+          ▼
+       Redis SET
+```
+
+Cache keys should consider:
+
+- GraphQL operation
+- Query variables
+- Tenant context
+- Authorization context where required
+- Relevant request headers
+
+Public/read-only queries can generally have longer TTLs. User-specific or sensitive data should use appropriate cache policies or bypass caching.
+
+Mutations should not be treated as normal response-cache candidates.
+
+---
+
+# Authentication & Authorization
+
+Keycloak provides centralized identity management.
+
+```text
+Client
+   │
+   ▼
+Keycloak
+   │
+   │ JWT / OAuth2
+   ▼
+GraphQL Platform
+   │
+   ▼
+Domain Services
+```
+
+The platform supports:
+
+- OAuth2
+- OpenID Connect
+- JWT access tokens
+- Role-based authorization
+- Shared authentication across micro frontends
+- GraphQL-level authorization
+
+Example permissions:
+
+```text
+product:read
+product:write
+order:read
+order:write
+```
+
+---
+
+# DataLoader & N+1 Prevention
+
+GraphQL can introduce N+1 query problems when resolving nested relationships.
+
+Without batching:
+
+```text
+1 query → orders
+N queries → products
+```
+
+With DataLoader:
+
+```text
+1 query → orders
+1 batched query → products
+```
+
+Conceptually:
+
+```text
+Orders
+  │
+  ├── Product 101 ┐
+  ├── Product 102 │
+  ├── Product 103 ├── DataLoader
+  ├── Product 104 │
+  └── Product 105 ┘
+          │
+          ▼
+     Batched lookup
+```
+
+---
+
+# Reactive Backend
+
+The backend uses:
+
+```text
+Spring Boot
+     │
+Spring GraphQL
+     │
+   R2DBC
+     │
+ PostgreSQL
+```
+
+R2DBC provides non-blocking database access and fits well with reactive request processing.
+
+---
+
+# Project Structure
+
+```text
 mfe-demo/
-├── pom.xml                # root Maven reactor POM — import this in your IDE
-├── docker-compose.yml
+│
 ├── backend/
-│   ├── product-service/   # module of the root pom.xml
-│   └── order-service/     # module of the root pom.xml
+│   ├── product-service/
+│   ├── order-service/
+│   └── ...
+│
 ├── frontend/
-│   ├── shell/, mfe-products/, mfe-orders/, shared-auth/
-├── cdn/                    # QA/prod CDN edge image (nginx) — see below
-├── infra/                 # postgres init.sql, keycloak realm export
-├── k8s/                   # production manifests
-│   └── qa/                 # QA overlay (namespace mfe-demo-qa, CDN instead of MinIO)
-├── docker-compose.yml      # local dev (MinIO)
-├── docker-compose.qa.yml   # QA (CDN edge)
-└── scripts/                # publish-to-minio.sh
+│   ├── shell/
+│   ├── mfe-products/
+│   ├── mfe-orders/
+│   └── shared-auth/
+│
+├── gateway/
+│   └── hive-graphql/
+│
+├── mcp/
+│   └── apollo-mcp/
+│
+├── agent/
+│   └── langgraph/
+│
+├── infra/
+│   ├── keycloak/
+│   ├── postgres/
+│   └── redis/
+│
+├── docs/
+│   └── architecture/
+│
+├── k8s/
+├── scripts/
+├── docker-compose.yml
+├── docker-compose.qa.yml
+├── pom.xml
+└── README.md
 ```
 
-## Routing inside each micro-frontend
+---
 
-Each remote owns its own create/edit/list routes rather than the shell
-knowing about them — the shell only mounts `mfeProducts` at `/products/*`
-and `mfeOrders` at `/orders/*`:
+# Local Development
 
-```
-frontend/mfe-products/src/
-├── ProductsApp.jsx           # router: index -> list, /new -> create, /:id/edit -> edit
-└── components/
-    ├── ProductList.jsx       # list + "Create product" link + per-row "Edit" link
-    ├── ProductForm.jsx       # individual, reusable form (shared by Create and Edit)
-    ├── ProductCreate.jsx     # create page (CREATE_PRODUCT mutation)
-    └── ProductEdit.jsx       # edit page (loads by id, UPDATE_PRODUCT mutation)
+## Prerequisites
 
-frontend/mfe-orders/src/
-├── OrdersApp.jsx             # router: index -> list, /new -> create, /:id/edit -> edit
-└── components/
-    ├── OrderList.jsx         # list + "Create order" link + per-row "Update status" link
-    ├── OrderItemsEditor.jsx  # individual, reusable line-items editor
-    ├── OrderCreate.jsx       # create page (CREATE_ORDER mutation)
-    └── OrderEdit.jsx         # "edit" page — order-service's schema only exposes
-                                #  updateOrderStatus, so this is scoped to that
-```
+- Docker
+- Docker Compose
+- Java 21+
+- Maven
+- Node.js
+- npm
+- Kubernetes tooling, if deploying to Kubernetes
 
-Every component is its own `.jsx` file (modern JSX, not plain `.js`) —
-`webpack.config.js` in each app adds `resolve.extensions: [".js", ".jsx"]`
-and injects `process.env.APP_ENV` via `webpack.DefinePlugin` so
-`shared-auth/src/config.js` resolves at build time (see below).
-
-In the shell, `components/NavGroup.jsx` renders each top-level nav item
-("Products", "Orders") with **List**/**Create** as sub-links underneath —
-so "Create Order" and "List" appear as sub-links in the shell's own nav,
-in addition to the equivalent links inside each remote's own UI.
-
-## Per-environment config (`config.js`)
-
-`frontend/shared-auth/src/config.js` holds one block per environment
-(`local`, `qa`, `production`) with that environment's Keycloak URL/realm
-and each backend's GraphQL URL. Which block gets used is decided **at
-build time**, not at runtime: every webpack config statically injects
-`process.env.APP_ENV` via `webpack.DefinePlugin`, so a QA build only ever
-contains QA URLs (no other environment's config ships in the bundle).
-
-```bash
-# local (default)
-npm run build                 # APP_ENV defaults to "local" in webpack.config.js
-
-# qa
-APP_ENV=qa npm run build
-
-# production
-APP_ENV=production npm run build
-```
-
-Docker builds pass this the same way, e.g. `cdn/Dockerfile` takes
-`--build-arg APP_ENV=qa` (see `docker-compose.qa.yml`). Add a new
-environment by adding a key to `config.js`'s `ENVIRONMENTS` object.
-
-## Real-time updates & cache freshness
-
-**The problem:** `fetchPolicy: "cache-and-network"` only re-hits the
-network when a query component (re)mounts or its variables change. It does
-NOT poll and does NOT know about changes that happen elsewhere while the
-query is just sitting there mounted — e.g. a colleague updates an order's
-status in another tab, or an omnichannel/POS system writes an order
-directly. Mutations made *from the same tab* already fix themselves up via
-`refetchQueries` (see `ProductCreate`/`ProductEdit`/`OrderCreate`/
-`OrderEdit`), but that doesn't help with changes from anywhere else.
-
-**What this demo settled on: polling, for both products AND orders.**
-`ProductList.jsx` and `OrderList.jsx` both use `pollInterval: 15_000` on
-their `useQuery` calls, plus a manual "⟳ Refresh" button for immediate
-resync. Background changes take up to 15 seconds to show, instead of
-being pushed instantly — a real trade-off, made deliberately.
-
-**Why not GraphQL Subscriptions (they were built, then removed):**
-An earlier version of this demo had a full subscription-based push
-pipeline for orders — `subscription { orderUpdated }`, a Postgres
-`LISTEN`/`NOTIFY` trigger so it worked regardless of who wrote the row
-(this GraphQL API, omnichannel, batch imports), `customerId`-scoped
-filtering, WebSocket authentication via the `connection_init` payload,
-reconnect-triggered cache resync, and ingress WebSocket timeout tuning.
-It worked. It was also judged not worth the operational risk for a
-production default, for reasons that surfaced while stress-testing it:
-
-- Postgres's `NOTIFY` queue is a bounded, shared structure — not designed
-  as a high-throughput event bus. At real sustained order volume, it can
-  back up faster than listeners drain it. Worse: the trigger fired
-  `pg_notify()` **synchronously inside the same transaction as the order
-  write**, meaning a notification-system problem could, in the worst
-  case, fail or block the order write itself — a live-update feature
-  taking down core business writes is a bad trade at any scale.
-- Each `order-service` replica had to hold one dedicated, non-pooled
-  Postgres connection open for its entire lifetime just to `LISTEN`. More
-  replicas (needed to handle more load) directly meant more permanent
-  connection pressure on Postgres — compounding the point above rather
-  than helping it.
-- Even with `customerId` scoping, every subscriber's `Flux` still got
-  touched by every published event before the filter ran — real,
-  unavoidable per-event fan-out cost that scaled with subscriber count.
-
-None of that is wrong for every use case — a system that genuinely needs
-instant push (e.g. live inventory during a flash sale) might reasonably
-accept these trade-offs, ideally backed by a real event bus (Redis
-Pub/Sub, Kafka, NATS) instead of Postgres `NOTIFY`/`LISTEN`, which is not
-built for this. For this project, polling was chosen as the safer default:
-no persistent-connection infrastructure to operate, no coupling between a
-"nice to have" live-update feature and the correctness of order writes,
-and correctness that doesn't depend on a connection surviving deploys or
-network blips. `shared-auth/apolloClient.js` still supports an optional
-`subscriptionUri` for a future event bus that doesn't have Postgres
-`NOTIFY`'s throughput ceiling — nothing in this codebase currently uses
-it.
-
-## Pagination & sorting (orders grid)
-
-`OrderList.jsx` is a sortable, paginated grid backed entirely by
-server-side pagination/sorting — not a client-side slice/sort of a large
-fetched dataset:
-
-- **Pagination**: `page`/`size` are real component state, changed by
-  `Pagination.jsx`'s Previous/Next buttons. `hasNextPage` is a heuristic
-  (page came back full) since `orders(...)` returns a plain list, not a
-  total count — see `Pagination.jsx`'s comment.
-- **Sorting**: clicking a column header (`SortableHeader.jsx`) sets
-  `sortField`/`sortDirection`, which `OrderGraphQLController.orders()`
-  turns into a real Spring Data `Sort`/`ORDER BY` — sorting the whole
-  dataset, not just the current page. Both product-service's and
-  order-service's paginated queries always apply an explicit `Sort`
-  (never unsorted) with `id` appended as a final tiebreaker, so page
-  boundaries stay stable instead of rows shifting/duplicating between
-  requests — Postgres doesn't guarantee row order across separate queries
-  without one.
-- **Refresh from backend**: the 15s poll keeps the current page/sort
-  reasonably fresh automatically; the "⟳ Refresh" button forces an
-  immediate `refetch()` for whatever page/sort is active.
-
-## Would this survive 100M orders/day?
-
-Short answer: **no, not as-is**, independent of the polling-vs-subscription
-question above — several other parts of this demo architecture would
-degrade or fail well before that volume:
-
-- **Offset-based pagination doesn't hold up.** `PageRequest.of(page,
-  size, sort)` uses `OFFSET`/`LIMIT`; at high row counts, deep pages
-  require scanning and discarding millions of rows first. Needs
-  **keyset/cursor pagination** (`WHERE (createdAt, id) < (:lastCreatedAt,
-  :lastId) ORDER BY createdAt DESC, id LIMIT :size`) instead.
-- **An unpartitioned `orders` table won't scale to this row count.**
-  ~36B+ rows/year with no partitioning means vacuum, index maintenance,
-  and backup/restore all degrade badly. Needs date-range partitioning
-  from the start at this scale.
-- **Polling at high concurrency is its own real cost.** Every open
-  `OrderList`/`ProductList` polling every 15s is still N clients × 1
-  query/15s hitting the database — bounded and predictable (unlike the
-  subscription fan-out issue above), but still real load that needs
-  capacity planning as concurrent viewers grow.
-
-None of this is implemented here — genuinely handling 100M orders/day is
-a different infrastructure tier (partitioned tables, keyset pagination,
-likely read replicas or a different datastore for the query side) than
-what a demo/reference project should carry.
-
-## Local run (docker-compose)
+## Start the platform
 
 ```bash
 docker compose up -d --build
 ```
 
-Services:
-- Keycloak: http://localhost:8080 (admin/admin) — realm auto-imported
-- MinIO console: http://localhost:9001 (minioadmin/minioadmin)
-- product-service GraphQL: http://localhost:8081/graphql (+ /graphiql)
-- order-service GraphQL: http://localhost:8082/graphql (+ /graphiql)
-- shell app: http://localhost:3000
-
-Demo user created by the realm import: `demo.user` / `Passw0rd!`
-(roles: `product:read`, `product:write`, `order:read`, `order:write`)
-
-## QA environment: CDN instead of MinIO
-
-MinIO (above) is a good stand-in for "some object store" for local dev,
-but it isn't a CDN — no immutable-asset caching, no gzip negotiation, and
-it's awkward to front with a real Ingress/TLS for a shared QA environment.
-For QA, static assets are served by a small **CDN edge** (`cdn/`) instead:
-an nginx origin, built from `cdn/Dockerfile`, that bundles shell +
-mfe-products + mfe-orders together and serves them with real CDN cache
-semantics (content-hashed JS/CSS cached as `immutable` for a year;
-`index.html`/`remoteEntry.js` always revalidated so new deploys are picked
-up). See `cdn/nginx.conf` for the exact rules.
+Build the backend:
 
 ```bash
-docker compose -f docker-compose.qa.yml up -d --build
-# shell:        http://localhost:8090
-# mfe-products: http://localhost:8090/products/
-# mfe-orders:   http://localhost:8090/orders/
+mvn clean install
 ```
 
-For Kubernetes, `k8s/qa/` is a separate overlay (namespace `mfe-demo-qa`)
-that deploys this same CDN edge instead of MinIO, alongside single-replica
-Postgres/Keycloak/backends sized for QA rather than prod. See
-`k8s/qa/README.md`. In a real hosted QA environment you'd typically put an
-actual cloud CDN (CloudFront / Cloud CDN / Cloudflare) in front of this
-same nginx origin rather than exposing it directly to the internet.
-
-## Publishing the micro-frontends to MinIO (local dev)
+Run an individual service:
 
 ```bash
-./scripts/publish-to-minio.sh
+mvn -pl backend/product-service -am spring-boot:run
 ```
 
-This builds each frontend (webpack) and uploads `dist/` to a bucket/prefix
-per app (`mfe-assets/shell`, `mfe-assets/products`, `mfe-assets/orders`),
-so `remoteEntry.js` URLs resolve to MinIO-served static files — the same
-pattern used for CDN-hosted Module Federation remotes in production.
+Run the frontend:
 
-## Kubernetes
+```bash
+cd frontend/shell
+npm install
+npm start
+```
 
-**Prod** (`k8s/`, namespace `mfe-demo`, MinIO-published assets):
+---
+
+# Kubernetes
+
+Kubernetes manifests are available under:
+
+```text
+k8s/
+```
+
+Example:
 
 ```bash
 kubectl apply -f k8s/namespace.yaml
 kubectl apply -f k8s/
 ```
 
-See `k8s/README.md` for ingress hostnames and secrets you must supply.
+Environment-specific deployment instructions should be maintained alongside the corresponding Kubernetes manifests.
 
-**QA** (`k8s/qa/`, namespace `mfe-demo-qa`, CDN-edge assets, single-replica
-backing services): see `k8s/qa/README.md`.
+---
+
+# Scaling Considerations
+
+For higher-scale deployments:
+
+### GraphQL
+
+- Persisted queries
+- Query complexity limits
+- Depth limits
+- Rate limiting
+- Request budgets
+- Horizontal gateway scaling
+
+### Database
+
+- Proper indexing
+- Read replicas
+- Partitioning where required
+- Keyset/cursor pagination
+- Independent read/write models where appropriate
+
+### Caching
+
+- Distributed Redis
+- Per-operation TTL
+- Cache invalidation strategy
+- Tenant-aware cache keys
+
+### Events
+
+```text
+Domain Service
+      │
+      ▼
+    Kafka
+      │
+ ┌────┼─────┐
+ ▼    ▼     ▼
+Cache Search Analytics
+```
+
+### Agents
+
+- Agent-specific rate limits
+- Tool authorization
+- Audit logging
+- Human approval for sensitive mutations
+- Tool execution timeouts
+- Token/cost budgets
+
+---
+
+# Security Model for Agents
+
+AI agents should be treated as untrusted clients.
+
+The MCP boundary should enforce:
+
+- Authentication
+- Authorization
+- Tool-level permissions
+- Input validation
+- Rate limiting
+- Audit logging
+- Mutation policies
+- Human approval where required
+
+Example:
+
+```text
+Agent
+ │
+ ▼
+"Cancel order 123"
+ │
+ ▼
+MCP Authorization
+ │
+ ├── Is user authenticated?
+ ├── Can user cancel this order?
+ ├── Is order cancellable?
+ ├── Is approval required?
+ │
+ ▼
+GraphQL Mutation
+```
+
+The agent should never bypass normal domain authorization.
+
+---
+
+# Architectural Benefits
+
+### One API Contract
+
+Every client interacts with the same domain graph.
+
+### Independent Domain Ownership
+
+Teams can independently own and deploy subgraphs.
+
+### Reduced API Duplication
+
+Business capabilities do not require separate implementations for Web, Mobile, and AI.
+
+### AI Ready
+
+MCP allows agent frameworks such as LangGraph to consume selected GraphQL operations.
+
+### Centralized Governance
+
+Authentication, authorization, caching, observability, and API policies can be managed at the platform boundary.
+
+### Frontend Independence
+
+Module Federation enables independently deployable frontend modules.
+
+### Reactive Backend
+
+Spring Boot + Spring GraphQL + R2DBC provides a reactive backend architecture.
+
+---
+
+# Design Philosophy
+
+```text
+┌────────────────────────────────────────────┐
+│                 Clients                    │
+│                                            │
+│ Web │ Mobile │ External │ AI Agents       │
+└─────────────────────┬──────────────────────┘
+                      │
+┌─────────────────────▼──────────────────────┐
+│             Access Protocols               │
+│                                            │
+│ GraphQL │ MCP                              │
+└─────────────────────┬──────────────────────┘
+                      │
+┌─────────────────────▼──────────────────────┐
+│            GraphQL Platform                │
+│                                            │
+│ Federation │ Cache │ Auth │ Observability │
+└─────────────────────┬──────────────────────┘
+                      │
+┌─────────────────────▼──────────────────────┐
+│              Domain Layer                  │
+│                                            │
+│ Product │ Order │ Inventory │ Rating ...  │
+└─────────────────────┬──────────────────────┘
+                      │
+┌─────────────────────▼──────────────────────┐
+│               Data Layer                   │
+│                                            │
+│ PostgreSQL │ Redis │ Event Streaming       │
+└────────────────────────────────────────────┘
+```
+
+> **Clients change. Protocols evolve. Domain capabilities remain reusable.**
+
+---
+
+# Technology Stack
+
+### Frontend
+
+- React
+- Webpack Module Federation
+- Apollo Client
+- React Router
+- Keycloak JavaScript adapter
+
+### Backend
+
+- Java
+- Spring Boot
+- Spring GraphQL
+- Spring Security
+- R2DBC
+- Spring Data
+- DataLoader
+
+### Platform
+
+- GraphQL Federation
+- Hive GraphQL Gateway
+- Apollo MCP
+- Redis
+- Keycloak
+
+### AI
+
+- LangGraph
+- MCP
+- LLM-based agent orchestration
+
+### Infrastructure
+
+- Docker
+- Docker Compose
+- Kubernetes
+- PostgreSQL
+- MinIO
+- nginx/CDN
+
+---
+
+# Project Status
+
+This repository is a **reference architecture and learning platform** demonstrating how a modern full-stack application can evolve into an agent-ready GraphQL platform.
+
+It is intended to demonstrate architectural patterns rather than provide a turnkey production platform.
+
+Production deployments should additionally address:
+
+- Secret management
+- TLS
+- High availability
+- Distributed tracing
+- Centralized observability
+- Rate limiting
+- Query complexity controls
+- Production-grade cache invalidation
+- Database scaling
+- Event-driven integration
+- Agent governance
+- Disaster recovery
+- Security hardening
+
+---
+
+# Roadmap
+
+- [ ] Complete federated Product / Order / Inventory graph
+- [ ] Central Hive GraphQL Gateway
+- [ ] Redis GraphQL response cache
+- [ ] Apollo MCP integration
+- [ ] LangGraph agent
+- [ ] Agent tool authorization
+- [ ] Persisted GraphQL operations
+- [ ] Query complexity and depth controls
+- [ ] OpenTelemetry tracing
+- [ ] Kafka-based domain events
+- [ ] Event-driven cache invalidation
+- [ ] Cursor/keyset pagination
+- [ ] Production-grade Kubernetes deployment
+- [ ] AI agent audit and approval workflow
+- [ ] Multi-tenant authorization model
+
+---
+
+# Key Architectural Takeaway
+
+The project demonstrates a shift from:
+
+```text
+                    Multiple APIs
+                         │
+          ┌──────────────┼──────────────┐
+          ▼              ▼              ▼
+         Web           Mobile           AI
+          │              │              │
+        REST            REST        Agent API
+```
+
+to:
+
+```text
+                       Unified GraphQL Platform
+                                  │
+            ┌─────────────────────┼─────────────────────┐
+            │                     │                     │
+           Web                  Mobile                AI
+            │                     │                     │
+         GraphQL               GraphQL                 MCP
+            │                     │                     │
+            └─────────────────────┼─────────────────────┘
+                                  │
+                         Hive GraphQL Gateway
+                                  │
+                         GraphQL Federation
+                                  │
+                  ┌───────────────┼───────────────┐
+                  ▼               ▼               ▼
+               Product          Order          Inventory
+```
+
+## One platform. One domain graph. Every client.
+
+---
+
+## License
+
+This project is provided as a reference and learning implementation. Add an explicit open-source license if you intend to permit redistribution or modification.
