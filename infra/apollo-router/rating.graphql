@@ -1,0 +1,24 @@
+# Static Federation 2 subgraph SDL for rating-service — see
+# product.graphql's header comment for the general keep-in-sync-by-hand
+# trade-off, and inventory.graphql's header for why "extend" is NOT used
+# here despite the name (Federation 2 drops that requirement).
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key", "@external"])
+
+type ProductRating {
+    productId: ID!
+    averageRating: Float!
+    reviewCount: Int!
+    updatedAt: String
+}
+
+# Genuinely 1:1 — contrast with inventory.graphql's Product.inventory,
+# which is [Inventory!]!. Here `rating` is a single nullable object.
+type Product @key(fields: "id") {
+    id: ID! @external
+    rating: ProductRating
+}
+
+type Query {
+    ratingForProduct(productId: ID!): ProductRating
+}

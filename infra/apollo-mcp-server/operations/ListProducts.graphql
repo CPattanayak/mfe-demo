@@ -1,0 +1,13 @@
+# Browse or search the product catalog. Use this when the user wants
+# to see what's available, or when you need to FIND a product's id
+# before looking up its full details with GetProduct — this does NOT
+# return inventory or rating data, only id/sku/name/price.
+query ListProducts($page: Int = 0, $size: Int = 20) {
+  products(page: $page, size: $size) {
+    id
+    sku
+    name
+    priceCents
+    currency
+  }
+}

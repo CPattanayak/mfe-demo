@@ -1,0 +1,24 @@
+# Look up ONE specific product by its id. Use this when the user has
+# already named a specific product or given you its id, and you need
+# its price, description, stock across all warehouses, or rating.
+# Do NOT use this to search or browse — use ListProducts for that, then
+# call GetProduct with the id you find.
+query GetProduct($id: ID!) {
+  product(id: $id) {
+    id
+    sku
+    name
+    description
+    priceCents
+    currency
+    inventory {
+      warehouseLocation
+      quantityAvailable
+      quantityReserved
+    }
+    rating {
+      averageRating
+      reviewCount
+    }
+  }
+}

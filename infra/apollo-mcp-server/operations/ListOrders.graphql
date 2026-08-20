@@ -1,0 +1,18 @@
+# List recent orders with their status and line items. Use this when
+# the user asks about order status, order history, or "what did
+# customer X order". `product` on each line item is a lightweight
+# summary (name only) — use GetProduct separately if the user then
+# asks for that product's full details, price, or stock.
+query ListOrders($page: Int = 0, $size: Int = 20) {
+  orders(page: $page, size: $size, sortField: CREATED_AT, sortDirection: DESC) {
+    id
+    customerId
+    status
+    items {
+      quantity
+      product {
+        name
+      }
+    }
+  }
+}

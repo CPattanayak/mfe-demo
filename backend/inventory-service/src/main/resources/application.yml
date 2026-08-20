@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: inventory-service
+  r2dbc:
+    url: ${SPRING_R2DBC_URL:r2dbc:postgresql://localhost:5432/appdb?schema=inventory_schema}
+    username: ${SPRING_R2DBC_USERNAME:inventory_service}
+    password: ${SPRING_R2DBC_PASSWORD:inventory_service_pwd}
+  graphql:
+    graphiql:
+      enabled: true
+    cors:
+      allowed-origins: "*"
+      allowed-methods: "*"
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI:http://localhost:8080/realms/microfrontend-demo}
+
+server:
+  port: ${SERVER_PORT:8083}
+
+logging:
+  level:
+    org.springframework.graphql: INFO

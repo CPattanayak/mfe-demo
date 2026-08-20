@@ -1,0 +1,33 @@
+# Backs Hive Gateway's response caching (see
+# infra/hive-gateway/gateway.config.ts) — caches product-service/
+# rating-service responses, since that data changes infrequently.
+# order-service and inventory-service are deliberately NOT cached.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: mfe-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: redis }
+  template:
+    metadata:
+      labels: { app: redis }
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports: [{ containerPort: 6379 }]
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 256Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: mfe-demo
+spec:
+  selector: { app: redis }
+  ports: [{ port: 6379, targetPort: 6379 }]

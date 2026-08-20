@@ -1,0 +1,30 @@
+operations:
+  source: local
+  paths:
+    - /mcp-operations/
+
+schema:
+  source: local
+  path: /supergraph/supergraph.graphql
+
+endpoint: http://hive-gateway:4000/graphql
+
+transport:
+  type: streamable_http
+  address: 0.0.0.0
+  port: 8000
+  host_validation:
+    enabled: false
+
+introspection:
+  introspect:
+    enabled: true
+  search:
+    enabled: true
+  validate:
+    enabled: true
+  execute:
+    enabled: true
+
+forward_headers:
+  - Authorization

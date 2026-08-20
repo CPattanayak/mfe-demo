@@ -21,6 +21,27 @@ export const PRODUCT_QUERY = gql`
       description
       priceCents
       currency
+      # A list, from inventory-service — a product can be stocked in
+      # multiple warehouses. Resolved for potentially many products at
+      # once via @BatchMapping (ONE query, not one per product) — see
+      # ProductInventoryResolver.java's javadoc.
+      inventory {
+        id
+        productId
+        quantityAvailable
+        quantityReserved
+        warehouseLocation
+        lastRestockedAt
+      }
+      # A SINGLE nullable object, from rating-service — genuinely 1:1,
+      # deliberately different in shape from inventory above. Both are
+      # federated in from services product-service knows nothing about,
+      # in this SAME one request.
+      rating {
+        averageRating
+        reviewCount
+        updatedAt
+      }
     }
   }
 `;

@@ -1,0 +1,39 @@
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key", "@external"])
+
+"""
+Not a federation entity itself (no @key) — nothing else needs to
+reference a rating row directly, it's only ever reached via
+Product.rating below.
+"""
+type ProductRating {
+    productId: ID!
+    averageRating: Float!
+    reviewCount: Int!
+    updatedAt: String
+}
+
+"""
+Same "extend an entity you don't own" pattern as inventory-service (see
+that service's schema.graphqls for the full explanation, including why
+this must NOT use the `extend` keyword despite the name). The
+MEANINGFUL difference is the field shape:
+
+  inventory-service: inventory: [Inventory!]!   — genuinely 1:MANY
+  rating-service:     rating: ProductRating      — genuinely 1:ONE
+
+`rating` is a single NULLABLE object, not a list — a product has AT
+MOST one rating record (rating_schema.product_rating's primary key IS
+product_id, structurally preventing more than one row per product; see
+infra/postgres/init.sql). Nullable because a brand-new product may not
+have any reviews yet.
+"""
+type Product @key(fields: "id") {
+    id: ID! @external
+    rating: ProductRating
+}
+
+type Query {
+    "Requires product:read. Direct lookup, bypassing the Product entity extension."
+    ratingForProduct(productId: ID!): ProductRating
+}

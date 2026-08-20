@@ -24,6 +24,15 @@ spec:
             - { name: KC_DB_URL, value: "jdbc:postgresql://postgres:5432/appdb" }
             - { name: KC_DB_USERNAME, valueFrom: { secretKeyRef: { name: postgres-credentials, key: POSTGRES_USER } } }
             - { name: KC_DB_PASSWORD, valueFrom: { secretKeyRef: { name: postgres-credentials, key: POSTGRES_PASSWORD } } }
+            # Must match the actual public host in ingress.yaml AND
+            # config.js's resolved keycloakUrl (window.location.origin at
+            # runtime — see that file's comment). cdn's nginx proxies
+            # /realms/** here (see cdn/nginx.conf); without this,
+            # Keycloak generates redirect/token URLs pointing at its own
+            # internal cluster address instead of the public one it's
+            # actually reachable at, breaking login. Same fix already
+            # applied to k8s/qa/keycloak.yaml, for the same reason.
+            - { name: KC_HOSTNAME, value: "app.example.com" }
           ports: [{ containerPort: 8080 }]
           readinessProbe:
             httpGet: { path: /health/ready, port: 8080 }

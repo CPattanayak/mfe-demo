@@ -29,12 +29,13 @@
       "implicitFlowEnabled": false,
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:3000/*##http://localhost:9000/shell/*##http://localhost:8090/*"
+        "post.logout.redirect.uris": "http://localhost:3000/*##http://localhost:9000/shell/*##http://localhost:8090/*##http://localhost:8085/*"
       },
       "redirectUris": [
         "http://localhost:3000/*",
         "http://localhost:9000/shell/*",
-        "http://localhost:8090/*"
+        "http://localhost:8090/*",
+        "http://localhost:8085/*"
       ],
       "webOrigins": [
         "http://localhost:3000",

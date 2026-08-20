@@ -1,0 +1,12 @@
+# Find products running low on stock (below the threshold, default 10
+# units) ACROSS ALL PRODUCTS and warehouses. Use this for restocking or
+# inventory-health questions ("what needs restocking", "what's running
+# low"). Do NOT use this for a single product's own stock level — use
+# GetProduct for that instead, it includes inventory per warehouse.
+query GetLowStockInventory($threshold: Int = 10) {
+  lowStockInventory(threshold: $threshold) {
+    productId
+    quantityAvailable
+    warehouseLocation
+  }
+}

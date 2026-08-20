@@ -78,3 +78,93 @@ metadata:
 spec:
   selector: { app: order-service }
   ports: [{ port: 8082, targetPort: 8082 }]
+---
+# Extends product-service's Product entity with an `inventory` field —
+# see backend/inventory-service/.../ProductInventoryResolver.java and
+# infra/apollo-router/inventory.graphql. Owns no entity itself, has no
+# dependency on product-service/order-service being up first (federation
+# entity extension is resolved by the federation gateway at query time,
+# not at this pod's startup).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-service
+  namespace: mfe-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: inventory-service }
+  template:
+    metadata:
+      labels: { app: inventory-service }
+    spec:
+      containers:
+        - name: inventory-service
+          image: ghcr.io/your-org/inventory-service:latest
+          ports: [{ containerPort: 8083 }]
+          env:
+            - { name: SPRING_R2DBC_URL, value: "r2dbc:postgresql://postgres:5432/appdb?schema=inventory_schema" }
+            - { name: SPRING_R2DBC_USERNAME, value: "inventory_service" }
+            - name: SPRING_R2DBC_PASSWORD
+              valueFrom: { secretKeyRef: { name: postgres-credentials, key: INVENTORY_SERVICE_DB_PASSWORD } }
+            - { name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI, value: "http://keycloak:8080/realms/microfrontend-demo" }
+            - { name: SERVER_PORT, value: "8083" }
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8083 }
+            initialDelaySeconds: 15
+          resources:
+            requests: { cpu: 200m, memory: 384Mi }
+            limits: { cpu: "1", memory: 768Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-service
+  namespace: mfe-demo
+spec:
+  selector: { app: inventory-service }
+  ports: [{ port: 8083, targetPort: 8083 }]
+---
+# Extends product-service's Product entity with a `rating` field —
+# GENUINELY 1:1 (contrast with inventory-service's 1:many). See
+# backend/rating-service/.../ProductRatingResolver.java and
+# infra/apollo-router/rating.graphql.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rating-service
+  namespace: mfe-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: rating-service }
+  template:
+    metadata:
+      labels: { app: rating-service }
+    spec:
+      containers:
+        - name: rating-service
+          image: ghcr.io/your-org/rating-service:latest
+          ports: [{ containerPort: 8084 }]
+          env:
+            - { name: SPRING_R2DBC_URL, value: "r2dbc:postgresql://postgres:5432/appdb?schema=rating_schema" }
+            - { name: SPRING_R2DBC_USERNAME, value: "rating_service" }
+            - name: SPRING_R2DBC_PASSWORD
+              valueFrom: { secretKeyRef: { name: postgres-credentials, key: RATING_SERVICE_DB_PASSWORD } }
+            - { name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI, value: "http://keycloak:8080/realms/microfrontend-demo" }
+            - { name: SERVER_PORT, value: "8084" }
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8084 }
+            initialDelaySeconds: 15
+          resources:
+            requests: { cpu: 200m, memory: 384Mi }
+            limits: { cpu: "1", memory: 768Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rating-service
+  namespace: mfe-demo
+spec:
+  selector: { app: rating-service }
+  ports: [{ port: 8084, targetPort: 8084 }]

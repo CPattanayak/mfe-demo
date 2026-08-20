@@ -15,31 +15,18 @@ spec:
   tls:
     - hosts:
         - qa.example.com
-        - qa-api.example.com
-        - qa-auth.example.com
       secretName: mfe-demo-qa-tls
   rules:
+    # Single host, single backend: cdn's nginx (see cdn/nginx.conf)
+    # already does all the internal routing — GraphQL to hive-gateway,
+    # Keycloak auth to keycloak, everything else as static UI assets.
+    # The Ingress doesn't need to know any of that; it just needs to get
+    # every request to cdn. (Older versions of this file routed
+    # /graphql, /realms/**, etc. to separate hosts/backends directly —
+    # that predates the reverse-proxy design and is no longer correct.)
     - host: qa.example.com
       http:
         paths:
-          # Single CDN origin now serves shell (/), mfe-products
-          # (/products/) and mfe-orders (/orders/) — no more separate
-          # shell/mfe-products/mfe-orders Services or a MinIO path.
           - path: /
             pathType: Prefix
             backend: { service: { name: cdn, port: { number: 8090 } } }
-    - host: qa-auth.example.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend: { service: { name: keycloak, port: { number: 8080 } } }
-    - host: qa-api.example.com
-      http:
-        paths:
-          - path: /product
-            pathType: Prefix
-            backend: { service: { name: product-service, port: { number: 8081 } } }
-          - path: /order
-            pathType: Prefix
-            backend: { service: { name: order-service, port: { number: 8082 } } }

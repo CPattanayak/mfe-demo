@@ -1,0 +1,56 @@
+# Static Federation 2 subgraph SDL for product-service — used by
+# `rover supergraph compose` (see supergraph-config.yaml: `schema: file:`
+# instead of `schema: subgraph_url:`) so composition doesn't depend on
+# product-service being live/reachable at compose time. Trade-off, stated
+# plainly: this file must be kept in sync BY HAND with
+# backend/product-service/src/main/resources/graphql/schema.graphqls — a
+# schema change there that isn't mirrored here will compose successfully
+# but silently diverge from what product-service actually serves.
+# Introspection-based composition (`subgraph_url:`) doesn't have this
+# problem, at the cost of needing the subgraph live to compose at all.
+#
+# The @link directive is required for Federation 2 — it's normally added
+# automatically by federation-jvm's Federation.transform() at RUNTIME
+# (see FederationConfig.java), but since rover parses this file as plain
+# text without going through that runtime transform, it has to be
+# explicit here.
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key"])
+
+type Product @key(fields: "id") {
+    id: ID!
+    sku: String!
+    name: String!
+    description: String
+    priceCents: Int!
+    currency: String!
+    createdBy: String!
+    createdAt: String!
+    updatedAt: String!
+}
+
+input CreateProductInput {
+    sku: String!
+    name: String!
+    description: String
+    priceCents: Int!
+    currency: String = "USD"
+}
+
+input UpdateProductInput {
+    name: String
+    description: String
+    priceCents: Int
+}
+
+type Query {
+    products(page: Int = 0, size: Int = 20): [Product!]!
+    product(id: ID!): Product
+    productsByIds(ids: [ID!]!): [Product!]!
+}
+
+type Mutation {
+    createProduct(input: CreateProductInput!): Product!
+    updateProduct(id: ID!, input: UpdateProductInput!): Product!
+    deleteProduct(id: ID!): Boolean!
+}

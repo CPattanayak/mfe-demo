@@ -1,0 +1,126 @@
+# Exposes hand-written GraphQL operations as MCP tools, using the REAL,
+# confirmed official Apollo MCP Server image (found via Apollo's own MCP
+# registry listing) — an earlier version of this manifest assumed no
+# pre-built image existed and used a custom-built one instead; that
+# assumption was wrong.
+#
+# Still needs its own initContainer to compose the supergraph (same
+# pattern as hive-gateway.yaml — emptyDir volumes are pod-scoped, not
+# shareable across separate Deployments), but the MAIN container is now
+# the official image, configured via config.yaml (mounted from a
+# ConfigMap below) rather than a custom-built image with baked-in CLI
+# args.
+#
+# ClusterIP only, no Ingress route — matching the same pattern
+# product-service/order-service/inventory-service/rating-service
+# already use (only `cdn` is externally exposed). Reach this directly
+# for testing via:
+#   kubectl port-forward svc/apollo-mcp-server 8000:8000 -n mfe-demo-qa
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apollo-mcp-server
+  namespace: mfe-demo-qa
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: apollo-mcp-server }
+  template:
+    metadata:
+      labels: { app: apollo-mcp-server }
+    spec:
+      initContainers:
+        - name: supergraph-compose
+          image: ghcr.io/your-org/rover-compose:qa
+          volumeMounts:
+            - { name: router-config, mountPath: /workspace/supergraph-config.yaml, subPath: supergraph-config.yaml }
+            - { name: router-config, mountPath: /workspace/product.graphql, subPath: product.graphql }
+            - { name: router-config, mountPath: /workspace/order.graphql, subPath: order.graphql }
+            - { name: router-config, mountPath: /workspace/inventory.graphql, subPath: inventory.graphql }
+            - { name: router-config, mountPath: /workspace/rating.graphql, subPath: rating.graphql }
+            - { name: supergraph-output, mountPath: /output }
+      containers:
+        - name: apollo-mcp-server
+          image: ghcr.io/apollographql/apollo-mcp-server:v1.8.0
+          args: ["/config.yaml"]
+          ports: [{ containerPort: 8000 }]
+          volumeMounts:
+            - { name: mcp-config, mountPath: /config.yaml, subPath: config.yaml }
+            - { name: mcp-config, mountPath: /mcp-operations/GetProduct.graphql, subPath: GetProduct.graphql }
+            - { name: mcp-config, mountPath: /mcp-operations/ListProducts.graphql, subPath: ListProducts.graphql }
+            - { name: mcp-config, mountPath: /mcp-operations/GetLowStockInventory.graphql, subPath: GetLowStockInventory.graphql }
+            - { name: mcp-config, mountPath: /mcp-operations/ListOrders.graphql, subPath: ListOrders.graphql }
+            # Same emptyDir the initContainer above wrote
+            # supergraph.graphql into — matches config.yaml's absolute
+            # schema.path (/supergraph/supergraph.graphql).
+            - { name: supergraph-output, mountPath: /supergraph }
+          readinessProbe:
+            tcpSocket: { port: 8000 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+      volumes:
+        - name: router-config
+          configMap: { name: apollo-router-config-mcp }
+        - name: mcp-config
+          configMap: { name: apollo-mcp-server-config }
+        - name: supergraph-output
+          emptyDir: {}
+---
+# Separate from hive-gateway's own apollo-router-config — deliberately
+# named distinctly (-mcp suffix), even though the file CONTENTS
+# (supergraph-config.yaml + the 4 subgraph SDL files) are identical.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apollo-router-config-mcp
+  namespace: mfe-demo-qa
+data:
+  # Populate via:
+  #   kubectl create configmap apollo-router-config-mcp \
+  #     --from-file=supergraph-config.yaml=infra/apollo-router/supergraph-config.yaml \
+  #     --from-file=product.graphql=infra/apollo-router/product.graphql \
+  #     --from-file=order.graphql=infra/apollo-router/order.graphql \
+  #     --from-file=inventory.graphql=infra/apollo-router/inventory.graphql \
+  #     --from-file=rating.graphql=infra/apollo-router/rating.graphql \
+  #     -n mfe-demo-qa --dry-run=client -o yaml | kubectl apply -f -
+  supergraph-config.yaml: "placeholder"
+  product.graphql: "placeholder"
+  order.graphql: "placeholder"
+  inventory.graphql: "placeholder"
+  rating.graphql: "placeholder"
+---
+# config.yaml itself plus the 4 hand-written operation files — the same
+# files bind-mounted directly in docker-compose.qa.yml, here delivered
+# via ConfigMap instead since K8s has no direct host-path bind mount
+# equivalent.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apollo-mcp-server-config
+  namespace: mfe-demo-qa
+data:
+  # Populate via:
+  #   kubectl create configmap apollo-mcp-server-config \
+  #     --from-file=config.yaml=infra/apollo-mcp-server/config.yaml \
+  #     --from-file=GetProduct.graphql=infra/apollo-mcp-server/operations/GetProduct.graphql \
+  #     --from-file=ListProducts.graphql=infra/apollo-mcp-server/operations/ListProducts.graphql \
+  #     --from-file=GetLowStockInventory.graphql=infra/apollo-mcp-server/operations/GetLowStockInventory.graphql \
+  #     --from-file=ListOrders.graphql=infra/apollo-mcp-server/operations/ListOrders.graphql \
+  #     -n mfe-demo-qa --dry-run=client -o yaml | kubectl apply -f -
+  config.yaml: "placeholder"
+  GetProduct.graphql: "placeholder"
+  ListProducts.graphql: "placeholder"
+  GetLowStockInventory.graphql: "placeholder"
+  ListOrders.graphql: "placeholder"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apollo-mcp-server
+  namespace: mfe-demo-qa
+spec:
+  selector: { app: apollo-mcp-server }
+  ports: [{ port: 8000, targetPort: 8000 }]

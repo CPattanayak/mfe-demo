@@ -4,20 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="72ecbfc3-5308-49d8-9298-724ce416c9e3" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/product-service/src/main/java/com/demo/product/repository/ProductRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/product-service/src/main/java/com/demo/product/repository/ProductRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/OrdersApp.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/OrdersApp.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderCreate.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderCreate.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderEdit.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderEdit.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderItemsEditor.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderItemsEditor.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderList.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/components/OrderList.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-orders/src/graphql/orderQueries.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-orders/src/graphql/orderQueries.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-products/src/components/ProductCreate.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-products/src/components/ProductCreate.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/mfe-products/src/components/ProductEdit.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/mfe-products/src/components/ProductEdit.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/shell/src/components/Header.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/shell/src/components/Header.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/shell/src/components/NavGroup.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/shell/src/components/NavGroup.jsx" afterDir="false" />
-    </list>
+    <list default="true" id="02c40cff-1327-41cf-9a8f-34dae90cd562" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -26,45 +13,52 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="PackageJsonUpdateNotifier">
-    <dismissed value="$PROJECT_DIR$/frontend/shared-auth/package.json" />
-  </component>
-  <component name="ProjectColorInfo">{
-  &quot;customColor&quot;: &quot;&quot;,
-  &quot;associatedIndex&quot;: 1
-}</component>
-  <component name="ProjectId" id="3HrMKcbjWU1ImuxC1gpybKV3I3R" />
+  <component name="ProjectColorInfo"><![CDATA[{
+  "customColor": "",
+  "associatedIndex": 1
+}]]></component>
+  <component name="ProjectId" id="3IA0TVWDOJzSQ9tIbmeCLjbYyUt" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "Maven.mfe-demo-parent [compile].executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "Spring Boot.InventoryServiceApplication.executor": "Run",
     "Spring Boot.OrderServiceApplication.executor": "Run",
     "Spring Boot.ProductServiceApplication.executor": "Run",
+    "Spring Boot.RatingServiceApplication.executor": "Run",
     "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "hive__cchecontrol",
     "kotlin-language-version-configured": "true",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.2"
+    "nodejs_package_manager_path": "npm"
   }
 }]]></component>
-  <component name="RunManager" selected="Spring Boot.ProductServiceApplication">
+  <component name="RunManager" selected="Spring Boot.RatingServiceApplication">
+    <configuration name="InventoryServiceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
+      <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UnknownPolicyInFreeMode" />
+      <module name="inventory-service" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.demo.inventory.InventoryServiceApplication" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.demo.inventory.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="OrderServiceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
-      <option name="ALTERNATIVE_JRE_PATH" value="$PROJECT_DIR$/../../../Program Files/Java/jdk-17" />
-      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
       <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UnknownPolicyInFreeMode" />
       <module name="order-service" />
       <option name="SPRING_BOOT_MAIN_CLASS" value="com.demo.order.OrderServiceApplication" />
@@ -92,10 +86,26 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="RatingServiceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
+      <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UnknownPolicyInFreeMode" />
+      <module name="rating-service" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.demo.rating.RatingServiceApplication" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.demo.rating.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Spring Boot.RatingServiceApplication" />
         <item itemvalue="Spring Boot.ProductServiceApplication" />
         <item itemvalue="Spring Boot.OrderServiceApplication" />
+        <item itemvalue="Spring Boot.InventoryServiceApplication" />
       </list>
     </recent_temporary>
   </component>
@@ -109,11 +119,11 @@
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="72ecbfc3-5308-49d8-9298-724ce416c9e3" name="Changes" comment="" />
-      <created>1786621674347</created>
+      <changelist id="02c40cff-1327-41cf-9a8f-34dae90cd562" name="Changes" comment="" />
+      <created>1787192077599</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1786621674347</updated>
+      <updated>1787192077599</updated>
     </task>
     <servers />
   </component>

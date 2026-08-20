@@ -1,6 +1,5 @@
 import React from "react";
 import { useQuery } from "@apollo/client";
-import { useProductLookupClient } from "../productLookupClientContext";
 import { PRODUCTS_FOR_AUTOCOMPLETE_QUERY } from "../graphql/productLookupQueries";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
@@ -15,12 +14,34 @@ import AddIcon from "@mui/icons-material/Add";
 export default function OrderItemsEditor({ items, onChange }) {
   // Requirement fix: was a free-text "Product ID" field the person had to
   // already know/copy-paste — now an Autocomplete populated from
-  // product-service, showing "id — name" as the option label so the
-  // person picks a product by name and productId is stored automatically.
-  const productLookupClient = useProductLookupClient();
+  // product-service (via the federated gateway), showing "name (sku)" as
+  // the option label so the person picks a product by name and productId
+  // is stored automatically.
+  //
+  // Federation simplification: no more `client:` override here — before
+  // federation, this needed a SECOND Apollo Client pointed directly at
+  // product-service, since order-service's own schema had no `products`
+  // query. Now that Apollo Router composes both subgraphs into one
+  // schema, this just uses the default client from OrdersApp's
+  // <ApolloProvider>, same as every other query in this app.
   const { data, loading, error } = useQuery(PRODUCTS_FOR_AUTOCOMPLETE_QUERY, {
-    client: productLookupClient,
     variables: { page: 0, size: 100 },
+    // Overrides createApolloClient's default "cache-and-network" — that
+    // default exists to catch background changes (see README's "Real-time
+    // updates" section), but product catalog data doesn't need that: it's
+    // stable enough within one session that re-fetching on every mount of
+    // this component (every time someone opens Create Order) is wasted
+    // work. "cache-first" answers from the normalized cache with ZERO
+    // network call once it's been fetched once in this client's lifetime
+    // — only refetches if the cache has nothing for this query at all.
+    //
+    // Trade-off, stated plainly: if a product's price/name changes in
+    // another tab/session WHILE this tab stays open, this Autocomplete
+    // won't see that update until the page is reloaded (which creates a
+    // fresh Apollo Client/cache — see OrdersApp.jsx). Acceptable here
+    // because product catalog changes are infrequent and this form is
+    // typically used in short sessions, not left open for hours.
+    fetchPolicy: "cache-first",
   });
   const options = data?.products ?? [];
 

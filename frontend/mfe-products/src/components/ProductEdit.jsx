@@ -4,11 +4,13 @@ import { useMutation, useQuery } from "@apollo/client";
 import { authClient } from "@demo/shared-auth";
 import { PRODUCT_QUERY, UPDATE_PRODUCT, PRODUCTS_QUERY } from "../graphql/productQueries";
 import ProductForm from "./ProductForm";
+import FormSkeleton from "./FormSkeleton";
+import InventorySection from "./InventorySection";
+import RatingSection from "./RatingSection";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Link from "@mui/material/Link";
 import Alert from "@mui/material/Alert";
-import CircularProgress from "@mui/material/CircularProgress";
 
 export default function ProductEdit() {
   const { id } = useParams();
@@ -23,7 +25,7 @@ export default function ProductEdit() {
     onCompleted: () => navigate("/products"),
   });
 
-  if (loadingProduct) return <CircularProgress />;
+  if (loadingProduct) return <FormSkeleton />;
   if (loadError) return <Alert severity="error">{loadError.message}</Alert>;
   if (!data?.product) return <Typography>Product not found.</Typography>;
 
@@ -70,6 +72,8 @@ export default function ProductEdit() {
           })
         }
       />
+      <InventorySection inventory={data.product.inventory} productId={id} />
+      <RatingSection rating={data.product.rating} />
     </Box>
   );
 }

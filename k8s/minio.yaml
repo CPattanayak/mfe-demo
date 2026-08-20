@@ -1,3 +1,16 @@
+# =============================================================================
+# SUPERSEDED — DO NOT APPLY. Kept for reference/rollback only.
+#
+# Was the static-asset store for frontend-deployments.yaml's Deployments
+# (also superseded — see that file). cdn.yaml's nginx image now serves
+# built assets baked directly into the container instead of reading from
+# an object store at runtime, matching the QA topology
+# (docker-compose.qa.yml never used MinIO either — see that file's
+# comments). If you want a real object-store-backed CDN origin for
+# production, that's a legitimate alternative to cdn.yaml's baked-image
+# approach, but it isn't what this repo's QA reference implementation
+# does, so this file was never updated to match it.
+# =============================================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:

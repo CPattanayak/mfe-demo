@@ -10,13 +10,30 @@ version: "3.8"
 #    they'd actually be published by CI for a shared QA environment.
 #  - Backend services get healthchecks and restart policies, since QA is
 #    meant to be a shared, longer-lived environment, not a throwaway dev box.
+#  - Federated: product-service, order-service, inventory-service, and
+#    rating-service are real Apollo Federation subgraphs (see
+#    backend/*/config/FederationConfig.java).
+#    supergraph-compose runs `rover supergraph compose` once at startup
+#    (from static SDL files, not live introspection — see
+#    infra/apollo-router/supergraph-config.yaml) to combine all four
+#    subgraphs' schemas, and Hive Gateway loads the result and does the
+#    actual federation query planning/parallel execution AND response
+#    caching (see infra/hive-gateway/gateway.config.ts). `cdn`'s nginx
+#    (see cdn/nginx.conf) is the ONE endpoint the browser talks to for
+#    everything — GraphQL and Keycloak auth are reverse-proxied straight
+#    through to Router/Keycloak internally, alongside serving the UI
+#    itself. No separate gateway service — nginx already has to be there
+#    to serve the UI, and it does the identical path-routing a
+#    dedicated gateway app would, for a fraction of the resource cost.
+#    Only `cdn` publishes a host port now; every other service is
+#    reachable only on the Docker network.
 #
 # Usage:
 #   docker compose -f docker-compose.qa.yml up -d --build
 #
 # For a real cloud CDN in front of this same origin, point
-# CloudFront/Cloud CDN/Cloudflare at the `cdn` service's public endpoint
-# (or, better, at an S3/GCS bucket populated by your CI build — see
+# CloudFront/Cloud CDN/Cloudflare at cdn's public endpoint (or, better, at
+# an S3/GCS bucket populated by your CI build — see
 # scripts/publish-to-minio.sh for the analogous local pattern) instead of
 # hitting nginx's own cache directly from the internet.
 #
@@ -25,8 +42,8 @@ version: "3.8"
 # https://qa-*.example.com URLs) into the bundle — the same thing a real CI
 # pipeline would do for an actual QA deploy. If you're just smoke-testing
 # this compose file's container topology on your own machine, either edit
-# that "qa" block to point at localhost first, or override
-# `args.APP_ENV: local` below to use the local URLs instead.
+# that "qa" block to point at localhost:9000 (the gateway) first, or
+# override `args.APP_ENV: local` below to use the local block instead.
 
 services:
   postgres:
@@ -56,6 +73,16 @@ services:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: ${QA_KEYCLOAK_ADMIN_PASSWORD:-admin}
       KC_HEALTH_ENABLED: "true"
+      # Needed now that cdn's nginx proxies /realms/** to this container
+      # (see cdn/nginx.conf): without telling Keycloak its PUBLIC-facing
+      # hostname, it can generate redirect/token URLs pointing at its own
+      # internal container address instead of the public one, breaking
+      # login. Set this to your real public hostname for an actual QA
+      # deployment (the config.js "qa" block's keycloakUrl origin) —
+      # left unset by default here since this compose file's QA block is
+      # placeholder example.com URLs, not meant to resolve directly.
+      KC_HOSTNAME: ${QA_PUBLIC_HOSTNAME:-}
+      KC_HOSTNAME_STRICT: "false"
     volumes:
       - ./infra/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
     ports:
@@ -100,10 +127,142 @@ services:
 #    ports:
 #      - "8082:8082"
 #    restart: unless-stopped
+#
+#  # Extends product-service's Product entity with an `inventory` field —
+#  # see backend/inventory-service/.../ProductInventoryResolver.java and
+#  # infra/apollo-router/inventory.graphql.
+#  inventory-service:
+#    build:
+#      context: .
+#      dockerfile: backend/inventory-service/Dockerfile
+#    container_name: inventory-service-qa
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
+#    environment:
+#      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/appdb?schema=inventory_schema
+#      SPRING_R2DBC_USERNAME: inventory_service
+#      SPRING_R2DBC_PASSWORD: inventory_service_pwd
+#      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/microfrontend-demo
+#      SERVER_PORT: 8083
+#    ports:
+#      - "8083:8083"
+#    restart: unless-stopped
+
+  # Extends product-service's Product entity with a `rating` field —
+  # GENUINELY 1:1 (contrast with inventory's 1:many). See
+  # backend/rating-service/.../ProductRatingResolver.java and
+  # infra/apollo-router/rating.graphql.
+#  rating-service:
+#    build:
+#      context: .
+#      dockerfile: backend/rating-service/Dockerfile
+#    container_name: rating-service-qa
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
+#    environment:
+#      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/appdb?schema=rating_schema
+#      SPRING_R2DBC_USERNAME: rating_service
+#      SPRING_R2DBC_PASSWORD: rating_service_pwd
+#      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/microfrontend-demo
+#      SERVER_PORT: 8084
+#    ports:
+#      - "8084:8084"
+#    restart: unless-stopped
+
+  # Backs Hive Gateway's response caching — see docker-compose.yml's
+  # identical comment.
+  redis:
+    image: redis:7-alpine
+    container_name: redis-qa
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------
+  # Federation layer — same mechanism as local docker-compose.yml, see
+  # those service comments for the full explanation.
+  # ---------------------------------------------------------------------
+  supergraph-compose:
+    build:
+      context: ./infra/apollo-router/rover-compose
+    container_name: supergraph-compose-qa
+    volumes:
+      - ./infra/apollo-router/supergraph-config.yaml:/workspace/supergraph-config.yaml:ro
+      - ./infra/apollo-router/product.graphql:/workspace/product.graphql:ro
+      - ./infra/apollo-router/order.graphql:/workspace/order.graphql:ro
+      - ./infra/apollo-router/inventory.graphql:/workspace/inventory.graphql:ro
+      - ./infra/apollo-router/rating.graphql:/workspace/rating.graphql:ro
+      - supergraph-schema-qa:/output
+
+  # Replaces Apollo Router — see docker-compose.yml's identical comment.
+  hive-gateway:
+    image: ghcr.io/graphql-hive/gateway:latest
+    container_name: hive-gateway-qa
+    depends_on:
+      supergraph-compose:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+    volumes:
+      - supergraph-schema-qa:/supergraph
+      - ./infra/hive-gateway/gateway.config.ts:/gateway/gateway.config.ts:ro
+    # --host 0.0.0.0 — see docker-compose.yml's identical comment for
+    # why this isn't redundant with the documented CLI default.
+    command: ["supergraph", "--host", "0.0.0.0"]
+    restart: unless-stopped
+
+  # Exposes hand-written GraphQL operations as MCP tools — see
+  # docker-compose.yml's identical comment. Directly exposed on its own
+  # port (unlike hive-gateway above, which relies entirely on cdn's
+  # nginx reverse-proxy) because MCP clients are AI agent tooling, not
+  # browser traffic going through the same /graphql path the web UI
+  # uses — there's no existing nginx location block for MCP's SSE
+  # protocol, and adding one wouldn't make much sense given the
+  # different access pattern.
+  apollo-mcp-server:
+    image: ghcr.io/apollographql/apollo-mcp-server:v1.8.0
+    container_name: apollo-mcp-server-qa
+    depends_on:
+      hive-gateway:
+        condition: service_started
+    volumes:
+      - ./infra/apollo-mcp-server/config.yaml:/config.yaml:ro
+      - ./infra/apollo-mcp-server/operations:/mcp-operations:ro
+      - supergraph-schema-qa:/supergraph:ro
+    command: ["/config.yaml"]
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  # AI-agent operations only — see docker-compose.yml's identical
+  # comment.
+  ai-gateway-service:
+    build:
+      context: ./backend/ai-gateway-service
+    container_name: ai-gateway-service-qa
+    depends_on:
+      # NOT hive-gateway — see docker-compose.yml's identical comment.
+      apollo-mcp-server:
+        condition: service_started
+    environment:
+      KEYCLOAK_ISSUER: http://localhost:8080/realms/microfrontend-demo
+      KEYCLOAK_INTERNAL_URL: http://keycloak:8080/realms/microfrontend-demo
+      KEYCLOAK_CLIENT_ID: web-app
+      OPENROUTER_API_KEY: "abc"
+      OPENROUTER_MODEL: openai/gpt-4o-mini
+    ports:
+      - "8085:8000"
+    restart: unless-stopped
 
   # Requirement: CDN-style deployment for QA (replaces MinIO from the local
   # docker-compose.yml). Serves shell at /, mfe-products at /products/,
-  # mfe-orders at /orders/, all from one origin with CDN cache semantics.
+  # mfe-orders at /orders/ — AND is the single entry point for
+  # everything else too: /graphql and /realms/** are reverse-proxied
+  # straight through to hive-gateway/keycloak by nginx itself (see
+  # cdn/nginx.conf). No separate gateway service — a whole
+  # JVM app doing nothing but static path routing wasn't justified once
+  # nginx (already required here to serve the UI) does the identical
+  # routing for free.
   cdn:
     build:
       context: .
@@ -114,16 +273,20 @@ services:
         ORDERS_REMOTE_URL: /orders/remoteEntry.js
         APP_ENV: qa
     container_name: cdn-qa
-    environment:
-      KEYCLOAK_URL: http://localhost:8080
-    ports:
-      - "8090:8090"
+    depends_on:
+      hive-gateway:
+        condition: service_started
+      keycloak:
+        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8090/healthz"]
       interval: 10s
       timeout: 5s
       retries: 5
+    ports:
+      - "8090:8090"
     restart: unless-stopped
 
 volumes:
   pgdata-qa:
+  supergraph-schema-qa:

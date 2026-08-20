@@ -48,6 +48,8 @@
   <modules>
     <module>backend/product-service</module>
     <module>backend/order-service</module>
+    <module>backend/inventory-service</module>
+    <module>backend/rating-service</module>
   </modules>
 
   <!--

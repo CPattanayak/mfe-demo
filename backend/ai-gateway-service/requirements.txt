@@ -1,0 +1,19 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+httpx==0.28.1
+pydantic==2.10.4
+pydantic-settings==2.7.1
+python-jose[cryptography]==3.3.0
+
+# Minimum-version constraints (not exact pins) for these three
+# specifically — the LangChain/LangGraph ecosystem releases fast enough
+# that betting on an exact current patch version risked a straight-up
+# `pip install` failure if that exact version had already been
+# superseded/yanked by the time this actually runs. create_react_agent
+# (used in app/agent/graph.py) is confirmed present from 0.2.x onward,
+# even though it's now marked deprecated upstream in favor of
+# langchain's own create_agent — see that file's comment.
+langgraph>=0.2.0
+langchain-core>=0.3.0
+langchain-openai>=0.2.0
+langchain-mcp-adapters==0.2.1

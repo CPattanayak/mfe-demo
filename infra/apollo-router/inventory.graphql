@@ -1,0 +1,45 @@
+# Static Federation 2 subgraph SDL for inventory-service — see
+# product.graphql's header comment for the general keep-in-sync-by-hand
+# trade-off. This one is the canonical "extend an entity you don't own"
+# example: Product is owned by product-service (it has the real @key +
+# Query/Mutation fields); this subgraph only adds `inventory` to it.
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key", "@external"])
+
+type Inventory {
+    id: ID!
+    productId: ID!
+    quantityAvailable: Int!
+    quantityReserved: Int!
+    warehouseLocation: String
+    lastRestockedAt: String
+}
+
+type Product @key(fields: "id") {
+    id: ID! @external
+    inventory: [Inventory!]!
+}
+
+type Query {
+    inventoryForProduct(productId: ID!): [Inventory!]!
+    lowStockInventory(threshold: Int = 10): [Inventory!]!
+}
+
+input CreateInventoryInput {
+    productId: ID!
+    quantityAvailable: Int!
+    quantityReserved: Int = 0
+    warehouseLocation: String!
+}
+
+input UpdateInventoryInput {
+    quantityAvailable: Int
+    quantityReserved: Int
+    warehouseLocation: String
+}
+
+type Mutation {
+    createInventory(input: CreateInventoryInput!): Inventory!
+    updateInventory(id: ID!, input: UpdateInventoryInput!): Inventory!
+    deleteInventory(id: ID!): Boolean!
+}

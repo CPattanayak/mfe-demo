@@ -1,0 +1,66 @@
+# Requirement: production replacement for MinIO AND for the old separate
+# shell/mfe-products/mfe-orders Deployments (see frontend-deployments.yaml
+# — now SUPERSEDED, kept in the repo for reference/rollback only, not
+# applied). Serves all three built bundles from one nginx "CDN edge"
+# origin (image built from ./cdn/Dockerfile), with real immutable-asset
+# cache headers. Also the single entry point for GraphQL and Keycloak
+# auth — see cdn/nginx.conf's reverse-proxy blocks for /graphql and
+# /realms/**. This unification is what let hive-gateway.yaml's gateway
+# model actually work in production: a single catch-all "everything else"
+# route needs ONE static origin to point at, which three separate
+# Deployments on three separate paths structurally couldn't provide.
+#
+# For a real public-facing deployment, point a real CDN (CloudFront /
+# Cloud CDN / Cloudflare) at this Service (or at this Deployment's
+# Ingress — see ingress.yaml) rather than exposing nginx's own cache
+# straight to the internet.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cdn
+  namespace: mfe-demo
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app: cdn }
+  template:
+    metadata:
+      labels: { app: cdn }
+    spec:
+      containers:
+        - name: cdn
+          image: ghcr.io/your-org/mfe-cdn:latest
+          # Built via:
+          #   docker build -f cdn/Dockerfile --build-arg APP_ENV=production \
+          #     --build-arg CDN_PUBLIC_PATH=/ \
+          #     --build-arg PRODUCTS_REMOTE_URL=/products/remoteEntry.js \
+          #     --build-arg ORDERS_REMOTE_URL=/orders/remoteEntry.js .
+          #
+          # APP_ENV=production is NOT optional — this is exactly what
+          # selects config.js's "production" block at build time. Get
+          # this wrong (or accidentally reuse a cached layer built with a
+          # different APP_ENV) and the bundle silently ships with a
+          # DIFFERENT environment's URLs baked in — no build error, just
+          # a broken app once deployed. If GraphQL/auth calls
+          # mysteriously fail after deploying this image, verify what
+          # actually got baked in before assuming the cluster/network is
+          # broken:
+          #   kubectl exec -it deploy/cdn -n mfe-demo -- \
+          #     grep -o 'graphqlUrl:"[^"]*"' /usr/share/nginx/html/*.js
+          ports: [{ containerPort: 8090 }]
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8090 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 256Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cdn
+  namespace: mfe-demo
+spec:
+  selector: { app: cdn }
+  ports: [{ port: 8090, targetPort: 8090 }]

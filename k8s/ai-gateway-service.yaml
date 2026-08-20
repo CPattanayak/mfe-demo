@@ -1,0 +1,65 @@
+# AI-agent operations only — see backend/ai-gateway-service/app/main.py.
+# Deliberately does NOT do plain REST-to-GraphQL forwarding; its only
+# real dependency is apollo-mcp-server, not hive-gateway directly. See
+# app/config.py for why. ClusterIP only, no
+# Ingress route, matching the same internal-only pattern
+# product-service/order-service/inventory-service/rating-service
+# already use. Reach this directly for testing via:
+#   kubectl port-forward svc/ai-gateway-service 8085:8000 -n mfe-demo
+# then open http://localhost:8085/docs — forwarding to the SAME local
+# port (8085) already whitelisted in infra/keycloak/realm-export.json's
+# web-app client means the Swagger UI "Authorize" button's OAuth2
+# redirect works without any additional Keycloak config for K8s
+# specifically (kubectl port-forward doesn't rewrite paths the way an
+# Ingress path-prefix would, so no FastAPI root_path handling is needed
+# either).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-gateway-service
+  namespace: mfe-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: ai-gateway-service }
+  template:
+    metadata:
+      labels: { app: ai-gateway-service }
+    spec:
+      containers:
+        - name: ai-gateway-service
+          image: ghcr.io/your-org/ai-gateway-service:latest
+          ports: [{ containerPort: 8000 }]
+          env:
+            # TWO different Keycloak URLs, deliberately — see
+            # backend/ai-gateway-service/app/config.py's own comment
+            # for the full explanation. keycloak_issuer must match
+            # app.example.com (the browser-facing hostname stamped into
+            # every token's own "iss" claim — see k8s/qa/keycloak.yaml's
+            # KC_HOSTNAME), NOT the in-cluster Service DNS name.
+            - { name: KEYCLOAK_ISSUER, value: "http://app.example.com/realms/microfrontend-demo" }
+            - { name: KEYCLOAK_INTERNAL_URL, value: "http://keycloak:8080/realms/microfrontend-demo" }
+            - { name: KEYCLOAK_CLIENT_ID, value: "web-app" }
+            # See k8s/qa/ai-gateway-service.yaml's identical comment —
+            # a real per-request runtime dependency, not just a
+            # startup-order nicety.
+            - { name: MCP_SERVER_URL, value: "http://apollo-mcp-server:8000/mcp" }
+            - name: OPENROUTER_API_KEY
+              valueFrom: { secretKeyRef: { name: openrouter-credentials, key: OPENROUTER_API_KEY } }
+            - { name: OPENROUTER_MODEL, value: "openai/gpt-4o-mini" }
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8000 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 200m, memory: 384Mi }
+            limits: { cpu: "1", memory: 768Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-gateway-service
+  namespace: mfe-demo
+spec:
+  selector: { app: ai-gateway-service }
+  ports: [{ port: 8000, targetPort: 8000 }]

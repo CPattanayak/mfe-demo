@@ -1,0 +1,30 @@
+# Apollo Router runtime configuration.
+# Reference: https://www.apollographql.com/docs/graphos/routing/self-hosted/configuration
+
+supergraph:
+  listen: 0.0.0.0:4000
+  path: /graphql
+  introspection: true
+
+cors:
+  allow_any_origin: true
+
+headers:
+  all:
+    request:
+      - propagate:
+          named: "Authorization"
+
+sandbox:
+  enabled: true
+
+homepage:
+  enabled: false
+
+# LOCAL DEBUGGING ONLY — unredacts the real subgraph error text (stack
+# trace details, exception messages) into the response the CLIENT sees,
+# instead of Router's default "Subgraph errors redacted". Remove this (or
+# scope it to specific subgraphs only) before anything beyond local dev —
+# it can leak internal implementation details to callers.
+include_subgraph_errors:
+  all: true

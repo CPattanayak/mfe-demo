@@ -105,6 +105,171 @@ services:
     ports:
       - "8082:8082"
 
+  # Extends product-service's Product entity with an `inventory` field —
+  # the canonical Apollo Federation "subgraph attaching a field to an
+  # entity it doesn't own" pattern. See
+  # backend/inventory-service/.../ProductInventoryResolver.java and
+  # infra/apollo-router/inventory.graphql.
+  inventory-service:
+    build:
+      context: .
+      dockerfile: backend/inventory-service/Dockerfile
+    container_name: inventory-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    environment:
+      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/appdb?schema=inventory_schema
+      SPRING_R2DBC_USERNAME: inventory_service
+      SPRING_R2DBC_PASSWORD: inventory_service_pwd
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/microfrontend-demo
+      SERVER_PORT: 8083
+    ports:
+      - "8083:8083"
+
+  # Extends product-service's Product entity with a `rating` field —
+  # same pattern as inventory-service, GENUINELY 1:1 instead of 1:many
+  # (contrast Product.inventory: [Inventory!]! vs Product.rating:
+  # ProductRating). See backend/rating-service/.../ProductRatingResolver.java
+  # and infra/apollo-router/rating.graphql.
+  rating-service:
+    build:
+      context: .
+      dockerfile: backend/rating-service/Dockerfile
+    container_name: rating-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    environment:
+      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/appdb?schema=rating_schema
+      SPRING_R2DBC_USERNAME: rating_service
+      SPRING_R2DBC_PASSWORD: rating_service_pwd
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/microfrontend-demo
+      SERVER_PORT: 8084
+    ports:
+      - "8084:8084"
+
+  # ---------------------------------------------------------------------
+  # Federation layer: rover composes all FOUR subgraphs' STATIC SDL files
+  # (product.graphql/order.graphql/inventory.graphql/rating.graphql, kept
+  # in sync by hand with each service's real schema.graphqls) into ONE
+  # supergraph.graphql — an offline step, done by rover, not by the
+  # gateway itself. Hive Gateway (below) then loads that file and does
+  # the actual federation query planning/parallel subgraph execution.
+  # See infra/apollo-router/ for all the config files. File-based
+  # composition means this doesn't need any of the four services to be
+  # running at all to compose — it runs immediately, in parallel with
+  # them starting up.
+  # ---------------------------------------------------------------------
+  supergraph-compose:
+    build:
+      context: ./infra/apollo-router/rover-compose
+    container_name: supergraph-compose
+    volumes:
+      - ./infra/apollo-router/supergraph-config.yaml:/workspace/supergraph-config.yaml:ro
+      - ./infra/apollo-router/product.graphql:/workspace/product.graphql:ro
+      - ./infra/apollo-router/order.graphql:/workspace/order.graphql:ro
+      - ./infra/apollo-router/inventory.graphql:/workspace/inventory.graphql:ro
+      - ./infra/apollo-router/rating.graphql:/workspace/rating.graphql:ro
+      - supergraph-schema:/output
+
+  # Backs Hive Gateway's response caching (see
+  # infra/hive-gateway/gateway.config.ts) — caches product-service/
+  # rating-service responses, since that data changes infrequently.
+  # order-service and inventory-service are deliberately NOT cached (see
+  # that file's comment on why).
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  # Replaces Apollo Router — same rover-composed supergraph.graphql
+  # artifact (see supergraph-compose above, unchanged), different
+  # gateway binary. See infra/hive-gateway/gateway.config.ts for why:
+  # response caching now lives entirely here, not in product-service/
+  # rating-service.
+  hive-gateway:
+    image: ghcr.io/graphql-hive/gateway:latest
+    container_name: hive-gateway
+    depends_on:
+      supergraph-compose:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+    volumes:
+      - supergraph-schema:/supergraph
+      - ./infra/hive-gateway/gateway.config.ts:/gateway/gateway.config.ts:ro
+    # --host 0.0.0.0 is NOT redundant with the documented CLI default —
+    # confirmed via actual container logs that this exact image/version
+    # was binding to 127.0.0.1 (loopback-only, unreachable from other
+    # containers on the Docker network) despite the CLI reference
+    # stating 0.0.0.0 as the default. Explicit beats documented-but-
+    # not-actually-observed default; this is what fixed a real 502.
+    command: ["supergraph", "--host", "0.0.0.0"]
+    ports:
+      - "4000:4000"
+
+  # Exposes hand-written GraphQL operations (infra/apollo-mcp-server/
+  # operations/*.graphql) as MCP tools, so any MCP-compatible AI client
+  # can query product/inventory/order/rating data through the standard
+  # Model Context Protocol instead of raw GraphQL. Points at Hive
+  # Gateway — the one real GraphQL endpoint already running in this
+  # project — not because it must be Hive/Apollo specifically, any
+  # working endpoint would do here.
+  apollo-mcp-server:
+    # Real, confirmed official image (found via Apollo's own MCP
+    # registry listing) — an earlier version of this setup assumed no
+    # pre-built image existed and built a custom one from the install
+    # script instead; that assumption was wrong, this is simpler and
+    # more confidently correct.
+    image: ghcr.io/apollographql/apollo-mcp-server:v1.8.0
+    container_name: apollo-mcp-server
+    depends_on:
+      hive-gateway:
+        condition: service_started
+    volumes:
+      - ./infra/apollo-mcp-server/config.yaml:/config.yaml:ro
+      - ./infra/apollo-mcp-server/operations:/mcp-operations:ro
+      # Same convention hive-gateway already uses for this exact named
+      # volume — see config.yaml's schema.path comment for why this is
+      # a SEPARATE mount point from operations above, not nested under
+      # one shared /data directory.
+      - supergraph-schema:/supergraph:ro
+    command: ["/config.yaml"]
+    ports:
+      - "8000:8000"
+
+  # AI-agent operations only — see backend/ai-gateway-service/app/main.py.
+  # Deliberately does NOT do plain REST-to-GraphQL forwarding; its only
+  # real dependency is apollo-mcp-server, not hive-gateway directly.
+  # Keycloak-secured the same way every other service in this project
+  # already is (same realm, same role names), forwarding the caller's
+  # own token, never a shared service account.
+  ai-gateway-service:
+    build:
+      context: ./backend/ai-gateway-service
+    container_name: ai-gateway-service
+    depends_on:
+      # NOT hive-gateway — this service no longer calls GraphQL
+      # directly at all (see app/main.py's description). Its only real
+      # runtime dependency is apollo-mcp-server, which is what actually
+      # talks to Hive Gateway on its behalf.
+      apollo-mcp-server:
+        condition: service_started
+    environment:
+      KEYCLOAK_ISSUER: http://localhost:8080/realms/microfrontend-demo
+      KEYCLOAK_INTERNAL_URL: http://keycloak:8080/realms/microfrontend-demo
+      KEYCLOAK_CLIENT_ID: web-app
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: openai/gpt-4o-mini
+    ports:
+      - "8085:8000"
+
   shell:
     build:
       context: ./frontend
@@ -117,6 +282,13 @@ services:
       PRODUCTS_REMOTE_URL: http://localhost:3001/remoteEntry.js
       ORDERS_REMOTE_URL: http://localhost:3002/remoteEntry.js
 
+  # No PRODUCT_GRAPHQL_URL/ORDER_GRAPHQL_URL here (or below): those were
+  # already dead — this `environment:` block only affects the RUNNING
+  # container, but the GraphQL URL is baked into the JS bundle at IMAGE
+  # BUILD time via config.js's APP_ENV-selected block (see
+  # frontend/shared-auth/src/config.js's "local" entry: graphqlUrl points
+  # directly at hive-gateway on :4000 — no separate application gateway
+  # needed).
   mfe-products:
     build:
       context: ./frontend
@@ -124,8 +296,6 @@ services:
     container_name: mfe-products
     ports:
       - "3001:3001"
-    environment:
-      PRODUCT_GRAPHQL_URL: http://localhost:8081/graphql
 
   mfe-orders:
     build:
@@ -134,9 +304,8 @@ services:
     container_name: mfe-orders
     ports:
       - "3002:3002"
-    environment:
-      ORDER_GRAPHQL_URL: http://localhost:8082/graphql
 
 volumes:
   pgdata:
   miniodata:
+  supergraph-schema:

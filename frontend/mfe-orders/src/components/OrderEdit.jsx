@@ -4,11 +4,11 @@ import { useMutation, useQuery } from "@apollo/client";
 import { authClient } from "@demo/shared-auth";
 import { ORDER_QUERY, ORDERS_QUERY, UPDATE_ORDER_STATUS } from "../graphql/orderQueries";
 import OrderItemDetailsDialog from "./OrderItemDetailsDialog";
+import FormSkeleton from "./FormSkeleton";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Link from "@mui/material/Link";
 import Alert from "@mui/material/Alert";
-import CircularProgress from "@mui/material/CircularProgress";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
@@ -26,6 +26,9 @@ export default function OrderEdit() {
   const navigate = useNavigate();
   const [status, setStatus] = useState("PENDING");
   // Requirement: clicking an item opens a modal with its details.
+  // The whole (lightweight) summary item is tracked, not just its id —
+  // see OrderItemDetailsDialog's comment for why (renders name/quantity
+  // instantly, only queries the network for what's actually missing).
   const [selectedItem, setSelectedItem] = useState(null);
   // Viewing an order is fine for order:read alone — unlike Product/Order
   // Create, this page isn't fully blocked for readonly users. Only the
@@ -47,7 +50,7 @@ export default function OrderEdit() {
     if (data?.order?.status) setStatus(data.order.status);
   }, [data]);
 
-  if (loadingOrder) return <CircularProgress />;
+  if (loadingOrder) return <FormSkeleton />;
   if (loadError) return <Alert severity="error">{loadError.message}</Alert>;
   if (!data?.order) return <Typography>Order not found.</Typography>;
 
@@ -104,7 +107,7 @@ export default function OrderEdit() {
       </Stack>
 
       <OrderItemDetailsDialog
-        item={selectedItem}
+        summary={selectedItem}
         open={Boolean(selectedItem)}
         onClose={() => setSelectedItem(null)}
       />

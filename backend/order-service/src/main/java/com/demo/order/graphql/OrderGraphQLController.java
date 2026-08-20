@@ -64,6 +64,30 @@ public class OrderGraphQLController {
         return orderRepository.findById(UUID.fromString(id));
     }
 
+    /**
+     * Fix for "OrderList always loads the entire order, even though a
+     * DataLoader is involved": DataLoader batches the NETWORK CALLS to
+     * product-service into one per query — it does nothing about payload
+     * size or how often that payload gets re-fetched. Polling every 15s
+     * (see OrderList.jsx) while eagerly requesting every item's full
+     * nested Product breakdown for every order on the page was real,
+     * repeated, mostly-wasted work, since the list view only actually
+     * displays the product NAME.
+     *
+     * This single-item lookup lets the frontend request a lightweight
+     * item shape (id, quantity, product { name }) for the list/poll path,
+     * and defer fetching the full detail (sku, price, currency, ...) to
+     * the moment a specific item is actually clicked open — see
+     * OrderItemDetailsDialog.jsx. Still benefits from the same
+     * @BatchMapping DataLoader for its `product` field; a single-item
+     * query just means that batch happens to contain one id.
+     */
+    @QueryMapping
+    @PreAuthorize("hasRole('order:read')")
+    public Mono<OrderItem> orderItem(@Argument String id) {
+        return orderItemRepository.findById(UUID.fromString(id));
+    }
+
     /** Field resolver: Order.items — also batched automatically per top-level query. */
     @SchemaMapping(typeName = "Order", field = "items")
     public Flux<OrderItem> items(Order order) {

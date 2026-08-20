@@ -24,6 +24,13 @@ import java.util.UUID;
  * Each resolver is guarded with @PreAuthorize against the Keycloak realm
  * roles carried in the access token (see SecurityConfig). A caller without
  * the role gets a clean GraphQL error instead of leaking data.
+ *
+ * Plain business logic — no caching code here at all. Response caching
+ * moved to the GATEWAY layer (see infra/hive-gateway/gateway.config.ts),
+ * so this service only ever talks to the database, nothing else. Hive
+ * Gateway caches per GraphQL type (Product), automatically invalidates
+ * on any mutation returning that type, and needed zero changes here to
+ * do it.
  */
 @Controller
 @RequiredArgsConstructor
