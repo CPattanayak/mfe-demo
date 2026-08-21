@@ -106,7 +106,7 @@ services:
 #    ports:
 #      - "8081:8081"
 #    restart: unless-stopped
-#
+
 #  order-service:
 #    build:
 #      context: .
@@ -223,6 +223,32 @@ services:
       CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
     ports:
       - "9092:9092"
+    restart: unless-stopped
+
+  # Web UI to browse actual Kafka messages (including headers — the
+  # mutation-name header kafkaMutationNotifier.ts sets), topics, and
+  # consumer groups — a real alternative to the
+  # kafka-console-consumer.sh CLI command suggested earlier in this
+  # project. Config CONFIRMED consistent across many independent
+  # sources including the provectus/kafka-ui project's own official
+  # example compose file.
+  #
+  # Port 8087 host-side — checked against every other port already in
+  # use in this file first (8080 is keycloak's, 8081-8084 are the four
+  # backend services', 8000/8085 are apollo-mcp-server's/
+  # ai-gateway-service's, 8090 is cdn's, 9092 is kafka's own) — 8087
+  # was free.
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui-qa
+    depends_on:
+      kafka:
+        condition: service_started
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    ports:
+      - "8087:8080"
     restart: unless-stopped
 
   hive-gateway:
