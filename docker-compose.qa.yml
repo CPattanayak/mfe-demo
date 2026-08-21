@@ -106,7 +106,7 @@ services:
 #    ports:
 #      - "8081:8081"
 #    restart: unless-stopped
-#
+
 #  order-service:
 #    build:
 #      context: .
@@ -127,10 +127,10 @@ services:
 #    ports:
 #      - "8082:8082"
 #    restart: unless-stopped
-#
-#  # Extends product-service's Product entity with an `inventory` field —
-#  # see backend/inventory-service/.../ProductInventoryResolver.java and
-#  # infra/apollo-router/inventory.graphql.
+
+  # Extends product-service's Product entity with an `inventory` field —
+  # see backend/inventory-service/.../ProductInventoryResolver.java and
+  # infra/apollo-router/inventory.graphql.
 #  inventory-service:
 #    build:
 #      context: .
@@ -195,17 +195,87 @@ services:
       - supergraph-schema-qa:/output
 
   # Replaces Apollo Router — see docker-compose.yml's identical comment.
+  # QA ONLY — single-node Kafka in KRaft mode (no Zookeeper needed),
+  # backing infra/hive-gateway/plugins/kafkaMutationNotifier.ts. Config
+  # below is a well-established, cross-referenced pattern for
+  # single-node KRaft (confirmed consistent across many independent
+  # sources, not a single unverified guess) — CLUSTER_ID is just an
+  # arbitrary valid base64-style string (this exact placeholder value
+  # appears in multiple independent Kafka KRaft tutorials), not
+  # anything project-specific.
+  kafka:
+    image: apache/kafka:latest
+    container_name: kafka-qa
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      # Simplifies testing — the notifier plugin doesn't need to
+      # pre-create "graphql-mutations" itself.
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+    ports:
+      - "9092:9092"
+    restart: unless-stopped
+
+  # Web UI to browse actual Kafka messages (including headers — the
+  # mutation-name header kafkaMutationNotifier.ts sets), topics, and
+  # consumer groups — a real alternative to the
+  # kafka-console-consumer.sh CLI command suggested earlier in this
+  # project. Config CONFIRMED consistent across many independent
+  # sources including the provectus/kafka-ui project's own official
+  # example compose file.
+  #
+  # Port 8087 host-side — checked against every other port already in
+  # use in this file first (8080 is keycloak's, 8081-8084 are the four
+  # backend services', 8000/8085 are apollo-mcp-server's/
+  # ai-gateway-service's, 8090 is cdn's, 9092 is kafka's own) — 8087
+  # was free.
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui-qa
+    depends_on:
+      kafka:
+        condition: service_started
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    ports:
+      - "8087:8080"
+    restart: unless-stopped
+
   hive-gateway:
-    image: ghcr.io/graphql-hive/gateway:latest
+    # Custom-built, not pulled — see infra/hive-gateway/Dockerfile's own
+    # comment: a plugin using an external npm package (kafkajs) needs
+    # this, confirmed via Hive Gateway's own Docker deployment guide.
+    build:
+      context: ./infra/hive-gateway
     container_name: hive-gateway-qa
     depends_on:
       supergraph-compose:
         condition: service_completed_successfully
       redis:
         condition: service_started
+      kafka:
+        condition: service_started
     volumes:
       - supergraph-schema-qa:/supergraph
       - ./infra/hive-gateway/gateway.config.ts:/gateway/gateway.config.ts:ro
+      - ./infra/hive-gateway/plugins:/gateway/plugins:ro
+    environment:
+      KAFKA_BROKERS: kafka:9092
+      KAFKA_MUTATION_TOPIC: graphql-mutations
+      # Flip to "false" to verify the hook fires (check logs for
+      # "[kafka-mutation-notifier] hook fired...") WITHOUT needing
+      # Kafka publish to succeed — see the plugin's own comment.
+      KAFKA_MUTATION_NOTIFIER_ENABLED: "true"
     # --host 0.0.0.0 — see docker-compose.yml's identical comment for
     # why this isn't redundant with the documented CLI default.
     command: ["supergraph", "--host", "0.0.0.0"]
@@ -236,23 +306,23 @@ services:
 
   # AI-agent operations only — see docker-compose.yml's identical
   # comment.
-  ai-gateway-service:
-    build:
-      context: ./backend/ai-gateway-service
-    container_name: ai-gateway-service-qa
-    depends_on:
-      # NOT hive-gateway — see docker-compose.yml's identical comment.
-      apollo-mcp-server:
-        condition: service_started
-    environment:
-      KEYCLOAK_ISSUER: http://localhost:8080/realms/microfrontend-demo
-      KEYCLOAK_INTERNAL_URL: http://keycloak:8080/realms/microfrontend-demo
-      KEYCLOAK_CLIENT_ID: web-app
-      OPENROUTER_API_KEY: "abc"
-      OPENROUTER_MODEL: openai/gpt-4o-mini
-    ports:
-      - "8085:8000"
-    restart: unless-stopped
+#  ai-gateway-service:
+#    build:
+#      context: ./backend/ai-gateway-service
+#    container_name: ai-gateway-service-qa
+#    depends_on:
+#      # NOT hive-gateway — see docker-compose.yml's identical comment.
+#      apollo-mcp-server:
+#        condition: service_started
+#    environment:
+#      KEYCLOAK_ISSUER: http://localhost:8080/realms/microfrontend-demo
+#      KEYCLOAK_INTERNAL_URL: http://keycloak:8080/realms/microfrontend-demo
+#      KEYCLOAK_CLIENT_ID: web-app
+#      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+#      OPENROUTER_MODEL: openai/gpt-4o-mini
+#    ports:
+#      - "8085:8000"
+#    restart: unless-stopped
 
   # Requirement: CDN-style deployment for QA (replaces MinIO from the local
   # docker-compose.yml). Serves shell at /, mfe-products at /products/,
