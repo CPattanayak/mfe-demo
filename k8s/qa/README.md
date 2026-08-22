@@ -66,6 +66,21 @@ kubectl apply -f k8s/qa/redis.yaml
 kubectl apply -f k8s/qa/backend-deployments.yaml
 kubectl apply -f k8s/qa/hive-gateway.yaml
 
+# prometheus.yaml's own ConfigMap:
+kubectl create configmap prometheus-config \
+  --from-file=prometheus.yml=infra/prometheus/prometheus.yml \
+  -n mfe-demo-qa --dry-run=client -o yaml | kubectl apply -f -
+kubectl apply -f k8s/qa/prometheus.yaml
+
+# grafana.yaml's own ConfigMaps:
+kubectl create configmap grafana-provisioning-datasources \
+  --from-file=prometheus.yml=infra/grafana/provisioning/datasources/prometheus.yml \
+  -n mfe-demo-qa --dry-run=client -o yaml | kubectl apply -f -
+kubectl create configmap grafana-provisioning-dashboards \
+  --from-file=dashboards.yml=infra/grafana/provisioning/dashboards/dashboards.yml \
+  -n mfe-demo-qa --dry-run=client -o yaml | kubectl apply -f -
+kubectl apply -f k8s/qa/grafana.yaml
+
 # apollo-mcp-server.yaml's own ConfigMap (separate from hive-gateway's —
 # same file contents, deliberately named distinctly, see that manifest's
 # own comment):

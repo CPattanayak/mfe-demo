@@ -4,13 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="02c40cff-1327-41cf-9a8f-34dae90cd562" name="Changes" comment="fic error in mcp call">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/product-service/src/main/java/com/demo/product/graphql/ProductEntityResolver.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/product-service/src/main/java/com/demo/product/graphql/ProductEntityResolver.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/product-service/src/main/java/com/demo/product/graphql/ProductGraphQLController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/product-service/src/main/java/com/demo/product/graphql/ProductGraphQLController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-compose.qa.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.qa.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/infra/hive-gateway/gateway.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/infra/hive-gateway/gateway.config.ts" afterDir="false" />
-    </list>
+    <list default="true" id="02c40cff-1327-41cf-9a8f-34dae90cd562" name="Changes" comment="promithious metric" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -146,7 +140,15 @@
       <option name="project" value="LOCAL" />
       <updated>1787374480118</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="promithious metric">
+      <option name="closed" value="true" />
+      <created>1787386844473</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1787386844473</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -154,7 +156,8 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="fic error in mcp call" />
-    <option name="LAST_COMMIT_MESSAGE" value="fic error in mcp call" />
+    <MESSAGE value="promithious metric" />
+    <option name="LAST_COMMIT_MESSAGE" value="promithious metric" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

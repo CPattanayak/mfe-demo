@@ -1,0 +1,87 @@
+# Visualizes what Prometheus collects. Prometheus datasource is
+# auto-provisioned via the ConfigMap below — no manual UI setup needed
+# for that part. The actual Hive Gateway dashboard needs a one-time
+# manual import — see infra/grafana/dashboards/README.md for exactly
+# why that step isn't automated (a real, official dashboard exists,
+# but its raw JSON was never actually fetched/verified through my own
+# tools, so it isn't embedded here either).
+#
+# ClusterIP only, no Ingress route — matching the same internal-only
+# pattern every backend service in this project already uses. Reach
+# this directly for testing via:
+#   kubectl port-forward svc/grafana 3000:3000 -n mfe-demo
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-provisioning-datasources
+  namespace: mfe-demo
+data:
+  # Populate via:
+  #   kubectl create configmap grafana-provisioning-datasources \
+  #     --from-file=prometheus.yml=infra/grafana/provisioning/datasources/prometheus.yml \
+  #     -n mfe-demo --dry-run=client -o yaml | kubectl apply -f -
+  prometheus.yml: "placeholder"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-provisioning-dashboards
+  namespace: mfe-demo
+data:
+  # Populate via:
+  #   kubectl create configmap grafana-provisioning-dashboards \
+  #     --from-file=dashboards.yml=infra/grafana/provisioning/dashboards/dashboards.yml \
+  #     -n mfe-demo --dry-run=client -o yaml | kubectl apply -f -
+  dashboards.yml: "placeholder"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: mfe-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: grafana }
+  template:
+    metadata:
+      labels: { app: grafana }
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:latest
+          ports: [{ containerPort: 3000 }]
+          env:
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom: { secretKeyRef: { name: grafana-admin-credentials, key: GF_SECURITY_ADMIN_PASSWORD } }
+          volumeMounts:
+            - { name: datasources, mountPath: /etc/grafana/provisioning/datasources/prometheus.yml, subPath: prometheus.yml }
+            - { name: dashboard-provider, mountPath: /etc/grafana/provisioning/dashboards/dashboards.yml, subPath: dashboards.yml }
+            # Empty until a dashboard JSON is manually dropped in per
+            # infra/grafana/dashboards/README.md — an emptyDir here
+            # (not a ConfigMap) since there's no dashboard JSON file
+            # checked into this repo to mount from yet.
+            - { name: dashboards-storage, mountPath: /var/lib/grafana/dashboards }
+          readinessProbe:
+            tcpSocket: { port: 3000 }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 200m, memory: 384Mi }
+            limits: { cpu: "1", memory: 768Mi }
+      volumes:
+        - name: datasources
+          configMap: { name: grafana-provisioning-datasources }
+        - name: dashboard-provider
+          configMap: { name: grafana-provisioning-dashboards }
+        - name: dashboards-storage
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: mfe-demo
+spec:
+  selector: { app: grafana }
+  ports: [{ port: 3000, targetPort: 3000 }]
