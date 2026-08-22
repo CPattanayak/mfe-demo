@@ -106,7 +106,7 @@ services:
 #    ports:
 #      - "8081:8081"
 #    restart: unless-stopped
-
+#
 #  order-service:
 #    build:
 #      context: .
@@ -127,10 +127,10 @@ services:
 #    ports:
 #      - "8082:8082"
 #    restart: unless-stopped
-
-  # Extends product-service's Product entity with an `inventory` field —
-  # see backend/inventory-service/.../ProductInventoryResolver.java and
-  # infra/apollo-router/inventory.graphql.
+#
+#  # Extends product-service's Product entity with an `inventory` field —
+#  # see backend/inventory-service/.../ProductInventoryResolver.java and
+#  # infra/apollo-router/inventory.graphql.
 #  inventory-service:
 #    build:
 #      context: .
@@ -148,11 +148,11 @@ services:
 #    ports:
 #      - "8083:8083"
 #    restart: unless-stopped
-
-  # Extends product-service's Product entity with a `rating` field —
-  # GENUINELY 1:1 (contrast with inventory's 1:many). See
-  # backend/rating-service/.../ProductRatingResolver.java and
-  # infra/apollo-router/rating.graphql.
+#
+#  # Extends product-service's Product entity with a `rating` field —
+#  # GENUINELY 1:1 (contrast with inventory's 1:many). See
+#  # backend/rating-service/.../ProductRatingResolver.java and
+#  # infra/apollo-router/rating.graphql.
 #  rating-service:
 #    build:
 #      context: .
@@ -279,6 +279,44 @@ services:
     # --host 0.0.0.0 — see docker-compose.yml's identical comment for
     # why this isn't redundant with the documented CLI default.
     command: ["supergraph", "--host", "0.0.0.0"]
+    restart: unless-stopped
+
+  # Scrapes hive-gateway's /metrics endpoint (enabled via that
+  # service's own gateway.config.ts prometheus: {...} block). Standard,
+  # official Prometheus image and config format.
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus-qa
+    depends_on:
+      hive-gateway:
+        condition: service_started
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  # Visualizes what Prometheus collects. Prometheus datasource is
+  # auto-provisioned (infra/grafana/provisioning/datasources/) — no
+  # manual UI setup needed for that part. The actual Hive Gateway
+  # dashboard needs a one-time import — see
+  # infra/grafana/dashboards/README.md for exactly why that step isn't
+  # automated here.
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana-qa
+    depends_on:
+      prometheus:
+        condition: service_started
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    environment:
+      # QA-only convenience default — change before anything beyond
+      # local/QA use.
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    ports:
+      - "3000:3000"
     restart: unless-stopped
 
   # Exposes hand-written GraphQL operations as MCP tools — see

@@ -1,0 +1,14 @@
+# Scrapes Hive Gateway's /metrics endpoint — confirmed as the correct
+# default path directly from Hive Gateway's own official monitoring
+# docs. Metrics themselves are enabled in
+# infra/hive-gateway/gateway.config.ts's own prometheus: {...} block.
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "hive-gateway"
+    static_configs:
+      # "hive-gateway" — the Docker Compose service name, same DNS
+      # resolution every other service in this project already relies
+      # on (confirmed working pattern, not new to this file).
+      - targets: ["hive-gateway:4000"]

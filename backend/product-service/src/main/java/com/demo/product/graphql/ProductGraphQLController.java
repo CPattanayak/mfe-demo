@@ -3,6 +3,7 @@ package com.demo.product.graphql;
 import com.demo.product.domain.Product;
 import com.demo.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.graphql.data.method.annotation.Argument;
@@ -34,6 +35,7 @@ import java.util.UUID;
  */
 @Controller
 @RequiredArgsConstructor
+@Slf4j
 public class ProductGraphQLController {
 
     private final ProductRepository productRepository;
@@ -48,12 +50,14 @@ public class ProductGraphQLController {
     @QueryMapping
     @PreAuthorize("hasRole('product:read')")
     public Flux<Product> products(@Argument int page, @Argument int size) {
+        log.info("page: {}, size: {}", page, size);
         return productRepository.findAllBy(PageRequest.of(page, size, STABLE_ORDER));
     }
 
     @QueryMapping
     @PreAuthorize("hasRole('product:read')")
     public Mono<Product> product(@Argument String id) {
+        log.info("id: {}", id);
         return productRepository.findById(UUID.fromString(id));
     }
 

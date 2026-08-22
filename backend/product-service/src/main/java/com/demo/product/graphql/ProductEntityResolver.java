@@ -3,6 +3,7 @@ package com.demo.product.graphql;
 import com.demo.product.domain.Product;
 import com.demo.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.federation.EntityMapping;
 import org.springframework.stereotype.Controller;
@@ -38,12 +39,14 @@ import java.util.UUID;
  */
 @Controller
 @RequiredArgsConstructor
+@Slf4j
 public class ProductEntityResolver {
 
     private final ProductRepository productRepository;
 
     @EntityMapping
     public Mono<Product> product(@Argument String id) {
+        log.info("id: {}", id);
         return productRepository.findById(UUID.fromString(id));
     }
 }

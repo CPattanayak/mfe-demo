@@ -4,12 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="02c40cff-1327-41cf-9a8f-34dae90cd562" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitattributes" afterDir="false" />
+    <list default="true" id="02c40cff-1327-41cf-9a8f-34dae90cd562" name="Changes" comment="fic error in mcp call">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/ai-gateway-service/app/agent/graph.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/ai-gateway-service/app/agent/graph.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/ai-gateway-service/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/backend/ai-gateway-service/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/product-service/src/main/java/com/demo/product/graphql/ProductEntityResolver.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/product-service/src/main/java/com/demo/product/graphql/ProductEntityResolver.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/product-service/src/main/java/com/demo/product/graphql/ProductGraphQLController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/product-service/src/main/java/com/demo/product/graphql/ProductGraphQLController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docker-compose.qa.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.qa.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/infra/hive-gateway/gateway.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/infra/hive-gateway/gateway.config.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -51,7 +51,12 @@
     "ts.external.directory.path": "C:\\Program Files\\JetBrains\\IntelliJ IDEA 2026.1.2\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external"
   }
 }]]></component>
-  <component name="RunManager" selected="Spring Boot.InventoryServiceApplication">
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Work\mfe-demo\mfe-demo" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Spring Boot.ProductServiceApplication">
     <configuration name="InventoryServiceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
       <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UnknownPolicyInFreeMode" />
       <module name="inventory-service" />
@@ -110,10 +115,10 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Spring Boot.InventoryServiceApplication" />
-        <item itemvalue="Spring Boot.OrderServiceApplication" />
         <item itemvalue="Spring Boot.ProductServiceApplication" />
         <item itemvalue="Spring Boot.RatingServiceApplication" />
+        <item itemvalue="Spring Boot.OrderServiceApplication" />
+        <item itemvalue="Spring Boot.InventoryServiceApplication" />
       </list>
     </recent_temporary>
   </component>
@@ -133,9 +138,33 @@
       <option name="presentableId" value="Default" />
       <updated>1787192077599</updated>
     </task>
+    <task id="LOCAL-00001" summary="fic error in mcp call">
+      <option name="closed" value="true" />
+      <created>1787374480118</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1787374480118</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="fic error in mcp call" />
+    <option name="LAST_COMMIT_MESSAGE" value="fic error in mcp call" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/backend/product-service/src/main/java/com/demo/product/graphql/ProductEntityResolver.java</url>
+          <line>49</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>
