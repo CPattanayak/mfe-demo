@@ -12,7 +12,7 @@ The platform combines **React Module Federation**, **GraphQL Federation**, **Hiv
 
 ## Architecture
 
-![Unified GraphQL Platform Architecture](docs/unified-graphql-platform-architecture.png)
+![Unified GraphQL Platform Architecture](docs/UnifiedGr.png)
 
 The architecture follows this flow:
 

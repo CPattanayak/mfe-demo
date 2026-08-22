@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="02c40cff-1327-41cf-9a8f-34dae90cd562" name="Changes" comment="promithious metric" />
+    <list default="true" id="02c40cff-1327-41cf-9a8f-34dae90cd562" name="Changes" comment="kubectl files" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -148,7 +148,15 @@
       <option name="project" value="LOCAL" />
       <updated>1787386844473</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="kubectl files">
+      <option name="closed" value="true" />
+      <created>1787387294551</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1787387294551</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -157,7 +165,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="fic error in mcp call" />
     <MESSAGE value="promithious metric" />
-    <option name="LAST_COMMIT_MESSAGE" value="promithious metric" />
+    <MESSAGE value="kubectl files" />
+    <option name="LAST_COMMIT_MESSAGE" value="kubectl files" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
