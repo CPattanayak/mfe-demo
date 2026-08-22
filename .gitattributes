@@ -1,0 +1,23 @@
+# Forces specific file types to ALWAYS check out with LF line endings,
+# regardless of a contributor's own local Git autocrlf setting (a very
+# common Windows Git default that silently converts text files to
+# CRLF on checkout). This matters concretely for this project: a
+# shell script with CRLF line endings breaks inside a Linux container
+# with a genuinely confusing error — "exec /path/to/script.sh: no such
+# file or directory" — because the script's shebang line becomes
+# "#!/bin/sh\r", and the kernel looks for an interpreter literally
+# named that (which doesn't exist), rather than reporting the real
+# problem clearly.
+*.sh text eol=lf
+
+# Same class of risk for Dockerfiles — less commonly affected by this
+# exact symptom, but no reason to leave them exposed either.
+Dockerfile text eol=lf
+Dockerfile.* text eol=lf
+
+# Anything genuinely binary should never be touched by line-ending
+# conversion at all, regardless of extension.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary

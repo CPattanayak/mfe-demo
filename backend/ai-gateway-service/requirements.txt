@@ -16,4 +16,15 @@ python-jose[cryptography]==3.3.0
 langgraph>=0.2.0
 langchain-core>=0.3.0
 langchain-openai>=0.2.0
+# langchain-mcp-adapters pinned EXACTLY, not >=, and specifically to
+# 0.2.1 — CONFIRMED via a currently open upstream bug
+# (github.com/langchain-ai/langchain-mcp-adapters/issues/550) that
+# versions 0.3.0+ require a newer `mcp` SDK API
+# (streamable_http_client) but don't correctly constrain their OWN mcp
+# dependency to pull in a compatible version — pip resolves an
+# incompatible combination, producing exactly this real, observed
+# failure: "ImportError: cannot import name 'streamable_http_client'
+# from 'mcp.client.streamable_http' ... Did you mean:
+# 'streamablehttp_client'?" 0.2.1 is the last version confirmed to work
+# correctly with the mcp versions pip resolves alongside it.
 langchain-mcp-adapters==0.2.1

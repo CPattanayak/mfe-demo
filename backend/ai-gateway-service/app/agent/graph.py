@@ -24,6 +24,47 @@ from langgraph.prebuilt import create_react_agent
 from app.agent.llm import get_llm
 from app.config import settings
 
+# WORKAROUND for a confirmed upstream bug in the mcp Python SDK:
+# github.com/modelcontextprotocol/python-sdk/issues/1672 — "Python MCP
+# Client ValidationError: Empty SSE data causes JSON parsing failure".
+# The MCP server SDK intentionally sends an EMPTY SSE event as a
+# resumability "priming event" (real, spec-level protocol behavior,
+# not a bug on Apollo MCP Server's side) — the Python CLIENT SDK tries
+# to parse that empty string as JSON and crashes.
+#
+# The issue is marked Closed on GitHub, but has NO linked PR or merged
+# commit ("No branches or pull requests" in its own Development
+# section) — meaning there's no confirmed evidence any pip-installable
+# version actually contains a real fix. Upgrading mcp blindly to chase
+# a fix that might not exist would also risk reintroducing a DIFFERENT,
+# already-fixed bug: langchain-mcp-adapters==0.2.1 (see
+# requirements.txt's own comment) is pinned specifically because newer
+# mcp versions renamed an internal function it depends on.
+#
+# So: patch our own process instead of touching the version pin. This
+# is the EXACT workaround the issue's own reporter posted (skip
+# parsing when sse.data is empty, otherwise behave identically) —
+# applied once, at import time, for the whole process's lifetime.
+# Honest trade-off: monkey-patching a library's internals is
+# inherently fragile against that library changing out from under it —
+# but with mcp's version pinned indirectly via
+# langchain-mcp-adapters==0.2.1, that internal shouldn't be moving
+# underneath this patch unexpectedly.
+def _patch_mcp_empty_sse_bug() -> None:
+    from mcp.client.streamable_http import StreamableHTTPTransport
+
+    original_handle_sse_event = StreamableHTTPTransport._handle_sse_event
+
+    async def patched_handle_sse_event(self, sse, *args, **kwargs):
+        if not sse.data or sse.data.strip() == "":
+            return False  # skip empty priming events instead of crashing
+        return await original_handle_sse_event(self, sse, *args, **kwargs)
+
+    StreamableHTTPTransport._handle_sse_event = patched_handle_sse_event
+
+
+_patch_mcp_empty_sse_bug()
+
 SYSTEM_PROMPT = (
     "You are a helpful assistant for an e-commerce catalog. You can "
     "look up products, browse the catalog, check low-stock inventory "
